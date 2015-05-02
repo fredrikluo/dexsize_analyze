@@ -2,6 +2,7 @@ from dexterity.dx.dxlib import dxlib
 from dexterity.dx.dxlib import _Dex
 from dexterity.dx.bytestream import ByteStream
 import math
+import dvm
 
 # Remove Debug only
 from ctypes import cast
@@ -53,20 +54,24 @@ class Dex(object):
         # Build the reference count
         self._build_refcount()
 
+        a_s = 0
         # Inspect the item list 
         for k in self.item_dic.keys():
             name = self._get_item_name(self.item_dic[k])
-            #if k >= 0x1000:
-               #for kt in getattr(self, name).keys():
-               #    if getattr(self, name)[kt][3] == 0:
-               #       print getattr(self, name)[kt][0]
-            #else:
-            #   for i in getattr(self, name):
-            #       if i[3] == 0:
-            #          if k == 0x0001:
-            #             obj = i[2][0][0]
-            #             #print str(cast(obj.data,c_char_p).value)[:int(obj.size)]
+            s = 0
+            if k >= 0x1000:
+               for kt in getattr(self, name).keys():
+                   s += getattr(self, name)[kt][1]
+               print name,s
+            else:
+               for i in getattr(self, name):
+                    s += i[1]
+               print name ,s
+                         #print str(cast(obj.data,c_char_p).value)[:int(obj.size)]
    
+            a_s += s
+
+        print a_s
     def _get_item_name(self, name):
         return "_"+name+"s"
 
@@ -183,9 +188,9 @@ class Dex(object):
                self._connect_ref(i, debuginfos,  int(i[0].debug_info_off))
 
             # Disassemble the code and find the references from the code.
-            print "--Dissemble the code"
-            for x in range(0, i[0].insns_size):
-                print i[0].insns[x]
+            #print "--Dissemble the code"
+            #for x in range(0, i[0].insns_size):
+            #    print i[0].insns[x]
 
             # TODO: Link the catch hanlder to type_idx
             #if i[0].tries_size > 0:
@@ -312,6 +317,102 @@ class Dex(object):
 
 dex = Dex("./classes.dex")
 
+print "-----------"
 # Walk though the class defintion list and print out result
-dex.analyze()
+#dex.analyze()
+dex = dvm.DalvikVMFormat(open("classes.dex").read(), 'rb')
+as_s = 0
 
+obj = dex.map_list.get_item_type( "TYPE_HEADER_ITEM" )
+size = obj.meta_size
+as_s += size
+print obj, obj.offset, size, obj.offset+size
+
+obj = dex.map_list.get_item_type( "TYPE_STRING_ID_ITEM" )
+size = sum([ x.meta_size for x in obj])
+as_s += size
+print obj[0], obj[0].offset, size, obj[0].offset+size
+
+obj = dex.map_list.get_item_type( "TYPE_TYPE_ID_ITEM" )
+size = sum([ x.meta_size for x in obj.get_obj()])
+as_s += size
+print obj.get_obj()[0], obj.get_obj()[0].offset, size, obj.get_obj()[0].offset+size
+
+obj = dex.map_list.get_item_type( "TYPE_PROTO_ID_ITEM" )
+size = sum([ x.meta_size for x in obj.get_obj()])
+as_s += size
+print obj.get_obj()[0], obj.get_obj()[0].offset, size, obj.get_obj()[0].offset+size
+
+obj = dex.map_list.get_item_type( "TYPE_FIELD_ID_ITEM" )
+size = sum([ x.meta_size for x in obj.get_obj()])
+as_s += size
+print obj.get_obj()[0], obj.get_obj()[0].offset, size, obj.get_obj()[0].offset+size
+
+obj = dex.map_list.get_item_type( "TYPE_METHOD_ID_ITEM" )
+size = sum([ x.meta_size for x in obj.get_obj()])
+as_s += size
+print obj.get_obj()[0], obj.get_obj()[0].offset, size, obj.get_obj()[0].offset+size
+
+obj = dex.map_list.get_item_type( "TYPE_CLASS_DEF_ITEM" )
+size = sum([ x.meta_size for x in obj.get_obj()])
+as_s += size
+print obj.get_obj()[0], obj.get_obj()[0].offset, size, obj.get_obj()[0].offset+size
+
+obj = dex.map_list.get_item_type( "TYPE_ANNOTATION_SET_ITEM" )
+size = sum([ x.meta_size for x in obj])
+as_s += size
+print obj[0], obj[0].offset, size, obj[0].offset+size
+
+obj = dex.map_list.get_item_type( "TYPE_CODE_ITEM" )
+size = sum([ x.meta_size for x in obj.get_obj()])
+as_s += size
+print obj.get_obj()[0], obj.get_obj()[0].offset, size, obj.get_obj()[0].offset+size
+
+obj = dex.map_list.get_item_type( "TYPE_TYPE_LIST" )
+size = sum([ x.meta_size for x in obj])
+as_s += size
+print obj[0], obj[0].offset, obj[0].offset, size, obj[0].offset+size
+
+obj = dex.map_list.get_item_type( "TYPE_STRING_DATA_ITEM" )
+size = sum([ x.meta_size for x in obj])
+as_s += size
+print obj[0], obj[0].offset, size, obj[0].offset+size
+
+obj = dex.map_list.get_item_type( "TYPE_DEBUG_INFO_ITEM" )
+size = sum([ x.meta_size for x in obj])
+as_s += size
+print obj[0], obj[0].offset, size, obj[0].offset+size
+
+obj = dex.map_list.get_item_type( "TYPE_ANNOTATION_ITEM" )
+size = sum([ x.meta_size for x in obj])
+as_s += size
+print obj[0], obj[0].offset, size, obj[0].offset+size
+
+obj = dex.map_list.get_item_type( "TYPE_ENCODED_ARRAY_ITEM" )
+size = sum([ x.meta_size for x in obj])
+as_s += size
+print obj[0], obj[0].offset, size, obj[0].offset+size
+
+obj = dex.map_list.get_item_type( "TYPE_CLASS_DATA_ITEM" )
+size = sum([ x.meta_size for x in obj])
+as_s += size
+print obj[0], obj[0].offset, size, obj[0].offset+size
+
+size = dex.map_list.meta_size
+as_s += size
+obj = dex.map_list
+print obj, obj.offset, size, obj.offset+size
+
+obj = dex.map_list.get_item_type( "TYPE_ANNOTATION_SET_REF_LIST" )
+if obj != None:
+   size = sum([ x.meta_size for x in obj])
+   as_s += size
+   print obj, obj.offset, size, obj.offset+size
+
+obj = dex.map_list.get_item_type( "TYPE_ANNOTATIONS_DIRECTORY_ITEM" )
+if obj != None:
+   size =  sum([ x.meta_size for x in obj])
+   as_s += size
+   print obj[0], obj[0].offset, size, obj[0].offset+size
+
+print as_s, size
