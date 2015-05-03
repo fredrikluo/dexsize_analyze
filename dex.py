@@ -40,50 +40,8 @@ class Dex(object):
         self._build_refcount()
 
         # Inspect map
-        self._inspect_map()
+        # self._inspect_map()
 
-    def _inspect_map(self):
-        a_s = 0
-        # Inspect the item list 
-        for k in dvm.TYPE_MAP_ITEM.keys():
-            name = dvm.TYPE_MAP_ITEM[k]
-            s = 0
-            if k >= 0x1000:
-               for kt in getattr(self, name).keys():
-                   s += getattr(self, name)[kt][1]
-               print name,s
-            else:
-               for i in getattr(self, name):
-                    s += i[1]
-               print name ,s
-   
-            a_s += s
-
-        print a_s
-
-        print "Unreferenced_item: --"
-        # Inspect unreferenced the item list 
-        for k in dvm.TYPE_MAP_ITEM.keys():
-            name = dvm.TYPE_MAP_ITEM[k]
-
-            if name == "TYPE_MAP_LIST":
-               continue
-
-            s = 0
-            if k >= 0x1000:
-               for kt in getattr(self, name).keys():
-                   obj = getattr(self, name)[kt]
-                   if obj[3] == 0:
-                      print "---Dumping ---"
-                      print obj[0], obj[0].offset
-                      obj[0].show()
-            else:
-               for i in getattr(self, name):
-                   if i[3] == 0:
-                      print "---Dumping ---"
-                      print i[0], i[0].offset
-                      i[0].show()
-   
     def _build_map(self):
         for k in dvm.TYPE_MAP_ITEM.keys():
             name = dvm.TYPE_MAP_ITEM[k]
@@ -96,9 +54,6 @@ class Dex(object):
 
     def _connect_ref(self, ls, target, target_idx):
         ls[2].append(target[target_idx])
-        #Remove this
-        target[target_idx][3] = 1
-        print "Connect to", target[target_idx][0], target[target_idx][0].offset
 
     def _build_reference_map(self):
         # header has no reference items
@@ -179,7 +134,6 @@ class Dex(object):
                 self._connect_ref(i, annsetitems,  ls[i[0].annotations_off])
 
         encodearraryitems = getattr(self, dvm.TYPE_MAP_ITEM[0x2005])
-        print "--- encode : dumping --"
         # encoded array items
         for k in encodearraryitems.keys():
             i = encodearraryitems[k]
@@ -228,7 +182,15 @@ class Dex(object):
                    self._connect_ref(i, fieldids, x.get_ref_kind())
                 elif kd == dvm.KIND_TYPE:
                    self._connect_ref(i, typeids, x.get_ref_kind())
-
+                   if x.get_name() == "new-array":
+                      # This is a special case, with new-arrary, the type
+                      # would point to "[className" type, which implicitly
+                      # points to className
+                      type_str = stringdatas[stringids[typeids[x.get_ref_kind()][0].descriptor_idx][0].string_data_off][0].get()
+                      type_str = type_str[1:]
+                      for ti, val in enumerate(typeids):
+                          if type_str == stringdatas[stringids[val[0].descriptor_idx][0].string_data_off][0].get():
+                             self._connect_ref(i, typeids, ti)
                 nb += 1
 
             if i[0].tries_size > 0:
@@ -311,10 +273,8 @@ class Dex(object):
     def _build_refcount(self):
         # The start point is always classdefs
         classdefs = getattr(self, dvm.TYPE_MAP_ITEM[0x0006])
-
-        def op(obj, indent, op_obj):
-            obj[3] += 1
-
+        def op(obj, i, o_o):
+             obj[3] += 1
         for i in classdefs:
             self._walk(i, op, 0, 0)
 
@@ -325,13 +285,9 @@ class Dex(object):
         a_list = []
         a_sum = 0
         for i in classdefs:
-            #print "Start dumping class", i[0]
             ref_class = []
 
-            def op(obj, indent, ref_class):
-                ref_class.append([obj, indent])
-
-            self._walk(i, op, 0, ref_class)
+            self._walk(i, lambda obj, i, ref: ref.append([obj, i]),0, ref_class)
 
             #Sum all the value
             _sum = 0.0
@@ -340,14 +296,12 @@ class Dex(object):
                 a_list.append((ls[0].offset, ls[0]))
                 size = ls[1]/float(ls[3] if ls[3] > 0 else 1)
                 #print " " * indent, ls[0], ls[1], ls[3], size
-                #if type(ls[0]) is dvm.DalvikCode:
-                #   ls[0].show()
                 _sum += size
 
             a_sum += _sum
-            #print "Sum is:", _sum
+            print "Class {0}, {1:.2f}".format(i[0].get_name(),  _sum)
 
-        #print "Total:", a_sum
+        print "Total:", a_sum
 
         a_dic = {}
         for i in a_list:
@@ -359,6 +313,47 @@ class Dex(object):
 
         print v
        
+    def _inspect_map(self):
+        a_s = 0
+        # Inspect the item list 
+        for k in dvm.TYPE_MAP_ITEM.keys():
+            name = dvm.TYPE_MAP_ITEM[k]
+            s = 0
+            if k >= 0x1000:
+               for kt in getattr(self, name).keys():
+                   s += getattr(self, name)[kt][1]
+               print name,s
+            else:
+               for i in getattr(self, name):
+                    s += i[1]
+               print name ,s
+   
+            a_s += s
+
+        print a_s
+
+        print "Unreferenced_item: --"
+        # Inspect unreferenced the item list 
+        for k in dvm.TYPE_MAP_ITEM.keys():
+            name = dvm.TYPE_MAP_ITEM[k]
+
+            if name == "TYPE_MAP_LIST":
+               continue
+
+            s = 0
+            if k >= 0x1000:
+               for kt in getattr(self, name).keys():
+                   obj = getattr(self, name)[kt]
+                   if obj[3] == 0:
+                      print "---Dumping ---"
+                      print obj[0], obj[0].offset
+                      obj[0].show()
+            else:
+               for i in getattr(self, name):
+                   if i[3] == 0:
+                      print "---Dumping ---"
+                      print i[0], i[0].offset
+                      i[0].show()
+   
 dex = Dex("./classes.dex")
 dex.analyze()
-
