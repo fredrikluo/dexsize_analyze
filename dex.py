@@ -39,6 +39,9 @@ class Dex(object):
         # Build the reference count
         self._build_refcount()
 
+        # Sanity test
+        self._sanity_check()
+ 
         # Inspect map
         # self._inspect_map()
 
@@ -260,9 +263,6 @@ class Dex(object):
             if i[0].static_values_off != 0:
                self._connect_ref(i, encodearraryitems,  i[0].static_values_off)
 
-
-        return 0
-
     def _walk(self, i, op, indent, op_obj):
         indent += 1
         op(i, indent, op_obj)
@@ -289,7 +289,6 @@ class Dex(object):
 
             self._walk(i, lambda obj, i, ref: ref.append([obj, i]),0, ref_class)
 
-            #Sum all the value
             _sum = 0.0
             for item in ref_class:
                 ls, indent = item[0], item[1]
@@ -302,17 +301,37 @@ class Dex(object):
             print "Class {0}, {1:.2f}".format(i[0].get_name(),  _sum)
 
         print "Total:", a_sum
-
-        a_dic = {}
-        for i in a_list:
-            a_dic[i[0]] = i[1]
  
-        v = 0
-        for k in a_dic.keys():
-            v += a_dic[k].meta_size
+    def _sanity_check(self): 
+        print "Unreferenced_item: --"
+        # Inspect unreferenced the item list 
+        for k in dvm.TYPE_MAP_ITEM.keys():
+            name = dvm.TYPE_MAP_ITEM[k]
 
-        print v
-       
+            if (name == "TYPE_MAP_LIST" or
+                name == "TYPE_HEADER_ITEM" or
+                name == "TYPE_CLASS_DEF_ITEM"):
+               continue
+
+            s = 0
+            found = False
+            if k >= 0x1000:
+               for kt in getattr(self, name).keys():
+                   obj = getattr(self, name)[kt]
+                   if obj[3] == 0:
+                      print obj[0], obj[0].offset
+                      found = True
+                      obj[0].show()
+            else:
+               for i in getattr(self, name):
+                   if i[3] == 0:
+                      print "---Dumping ---"
+                      print i[0], i[0].offset
+                      found = True
+                      i[0].show()
+
+            assert(not found and "BUG! must have no unreferenced item")
+
     def _inspect_map(self):
         a_s = 0
         # Inspect the item list 
@@ -332,28 +351,6 @@ class Dex(object):
 
         print a_s
 
-        print "Unreferenced_item: --"
-        # Inspect unreferenced the item list 
-        for k in dvm.TYPE_MAP_ITEM.keys():
-            name = dvm.TYPE_MAP_ITEM[k]
-
-            if name == "TYPE_MAP_LIST":
-               continue
-
-            s = 0
-            if k >= 0x1000:
-               for kt in getattr(self, name).keys():
-                   obj = getattr(self, name)[kt]
-                   if obj[3] == 0:
-                      print "---Dumping ---"
-                      print obj[0], obj[0].offset
-                      obj[0].show()
-            else:
-               for i in getattr(self, name):
-                   if i[3] == 0:
-                      print "---Dumping ---"
-                      print i[0], i[0].offset
-                      i[0].show()
    
 dex = Dex("./classes.dex")
 dex.analyze()
