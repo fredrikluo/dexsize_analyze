@@ -1451,20 +1451,20 @@ class EncodedValue(object):
         if self.value_type >= VALUE_SHORT and self.value_type < VALUE_STRING:
             self.value, self.raw_value = self._getintvalue(buff.read( self.value_arg + 1 ))
         elif self.value_type == VALUE_STRING:
-            id, self.raw_value = self._getintvalue(buff.read( self.value_arg + 1 ))
-            self.value = cm.get_raw_string(id)
+            self.mapped_id, self.raw_value = self._getintvalue(buff.read( self.value_arg + 1 ))
+            self.value = cm.get_raw_string(self.mapped_id)
         elif self.value_type == VALUE_TYPE:
-            id, self.raw_value = self._getintvalue(buff.read( self.value_arg + 1 ))
-            self.value = cm.get_type(id)
+            self.mapped_id, self.raw_value = self._getintvalue(buff.read( self.value_arg + 1 ))
+            self.value = cm.get_type(self.mapped_id)
         elif self.value_type == VALUE_FIELD:
-            id, self.raw_value = self._getintvalue(buff.read( self.value_arg + 1 ))
-            self.value = cm.get_field(id)
+            self.mappedid, self.raw_value = self._getintvalue(buff.read( self.value_arg + 1 ))
+            self.value = cm.get_field(self.mapped_id)
         elif self.value_type == VALUE_METHOD:
-            id, self.raw_value = self._getintvalue(buff.read( self.value_arg + 1 ))
-            self.value = cm.get_method(id)
+            self.mapped_id, self.raw_value = self._getintvalue(buff.read( self.value_arg + 1 ))
+            self.value = cm.get_method(self.mapped_id)
         elif self.value_type == VALUE_ENUM:
-            id, self.raw_value = self._getintvalue(buff.read( self.value_arg + 1 ))
-            self.value = cm.get_field(id)
+            self.mappedid, self.raw_value = self._getintvalue(buff.read( self.value_arg + 1 ))
+            self.value = cm.get_field(self.mapped_id)
         elif self.value_type == VALUE_ARRAY:
             self.value = EncodedArray( buff, cm )
         elif self.value_type == VALUE_ANNOTATION:
@@ -1883,6 +1883,8 @@ class StringIdItem(object):
     def show(self):
         bytecode._PrintSubBanner("String Id Item")
         bytecode._PrintDefault("string_data_off=%x\n" % self.string_data_off)
+        if self.string_data_off != 0:
+          bytecode._PrintDefault(self.__CM.get_string_by_offset( self.string_data_off ).get())
 
     def get_obj(self):
         if self.string_data_off != 0:
@@ -3826,9 +3828,17 @@ class Instruction(object):
         """
         if self.OP > 0xff:
           if self.OP >= 0xf2ff:
-            return DALVIK_OPCODES_OPTIMIZED[self.OP][1][1]
-          return DALVIK_OPCODES_EXTENDED_WIDTH[self.OP][1][1]
-        return DALVIK_OPCODES_FORMAT[self.OP][1][1]
+            return (DALVIK_OPCODES_OPTIMIZED[self.OP][1][1]
+                    if len(DALVIK_OPCODES_OPTIMIZED[self.OP][1]) > 1
+                    else None)
+
+          return (DALVIK_OPCODES_EXTENDED_WIDTH[self.OP][1][1]
+                  if len(DALVIK_OPCODES_EXTENDED_WIDTH[self.OP][1]) > 1
+                  else None)
+
+        return (DALVIK_OPCODES_FORMAT[self.OP][1][1]
+                if len(DALVIK_OPCODES_FORMAT[self.OP][1]) > 1
+                else None)
 
     def get_name(self):
         """
@@ -5705,7 +5715,7 @@ DALVIK_OPCODES_FORMAT = {
   0x1e : [Instruction11x, [ "monitor-exit" ] ],
   0x1f : [Instruction21c, [ "check-cast", KIND_TYPE ] ],
   0x20 : [Instruction22c, [ "instance-of", KIND_TYPE ] ],
-  0x21 : [Instruction12x, [ "array-length", KIND_TYPE ] ],
+  0x21 : [Instruction12x, [ "array-length" ] ],
   0x22 : [Instruction21c, [ "new-instance", KIND_TYPE ] ],
   0x23 : [Instruction22c, [ "new-array", KIND_TYPE ] ],
 
