@@ -37,11 +37,11 @@ class Dex(object):
             name = dvm.TYPE_MAP_ITEM[k]
             setattr(self, name, {} if k >= 0x1000 else [])
 
-        # Build the map
+        # Build the map items
         self._build_map()
 
-        # Build the reference map
-        self._build_reference_map()
+        # Build the reference tree 
+        self._build_reference_tree()
 
         # Build the reference count
         self._build_refcount()
@@ -67,7 +67,7 @@ class Dex(object):
     def _connect_ref(self, ls, target, target_idx):
         ls.child.append(target[target_idx])
 
-    def _build_reference_map(self):
+    def _build_reference_tree(self):
         # header has no reference items
         # maplists = dvm.TYPE_MAP_ITEM[0x1000]
         # ingore the map list for now
