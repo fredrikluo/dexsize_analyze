@@ -10,7 +10,8 @@ class Dex(object):
             if type(self.obj) is list:
                return self.obj
 
-            if type(self.obj) is dvm.HeaderItem or type(self.obj) is dvm.MapList:
+            if (type(self.obj) is dvm.HeaderItem or 
+                type(self.obj) is dvm.MapList):
                return [self.obj]
 
             if hasattr(self.obj, "get_obj"):
@@ -38,6 +39,10 @@ class Dex(object):
         # Build the reference count
         self._build_refcount()
 
+        # Inspect map
+        self._inspect_map()
+
+    def _inspect_map(self):
         a_s = 0
         # Inspect the item list 
         for k in dvm.TYPE_MAP_ITEM.keys():
@@ -56,6 +61,29 @@ class Dex(object):
 
         print a_s
 
+        print "Unreferenced_item: --"
+        # Inspect unreferenced the item list 
+        for k in dvm.TYPE_MAP_ITEM.keys():
+            name = dvm.TYPE_MAP_ITEM[k]
+
+            if name == "TYPE_MAP_LIST":
+               continue
+
+            s = 0
+            if k >= 0x1000:
+               for kt in getattr(self, name).keys():
+                   obj = getattr(self, name)[kt]
+                   if obj[3] == 0:
+                      print "---Dumping ---"
+                      print obj[0], obj[0].offset
+                      obj[0].show()
+            else:
+               for i in getattr(self, name):
+                   if i[3] == 0:
+                      print "---Dumping ---"
+                      print i[0], i[0].offset
+                      i[0].show()
+   
     def _build_map(self):
         for k in dvm.TYPE_MAP_ITEM.keys():
             name = dvm.TYPE_MAP_ITEM[k]
@@ -68,12 +96,16 @@ class Dex(object):
 
     def _connect_ref(self, ls, target, target_idx):
         ls[2].append(target[target_idx])
+        #Remove this
         target[target_idx][3] = 1
+        print "Connect to", target[target_idx][0], target[target_idx][0].offset
 
     def _build_reference_map(self):
         # header has no reference items
         # maplists = dvm.TYPE_MAP_ITEM[0x1000]
         # ingore the map list for now
+        maplists = getattr(self, dvm.TYPE_MAP_ITEM[0x1000])
+        print maplists
 
         # Node with no reference to others
         stringdatas = getattr(self, dvm.TYPE_MAP_ITEM[0x2002])
@@ -158,13 +190,30 @@ class Dex(object):
             if int(i[0].debug_info_off) > 0:
                self._connect_ref(i, debuginfos,  int(i[0].debug_info_off))
 
-            # Disassemble the code and find the references from the code
-            #print "--Dissemble the code"
-            #for x in range(0, i[0].insns_size):
-            #    print i[0].insns[x]
 
-            # TODO: Link the catch hanlder to type_idx
-            #if i[0].tries_size > 0:
+            ins = i[0].code.get_instructions()
+            nb = 0
+            for x in ins:
+                if not hasattr(x, "get_kind"):
+                   continue
+ 
+                kd = x.get_kind() 
+
+                if kd == dvm.KIND_METH:
+                   self._connect_ref(i, methodids, x.get_ref_kind())
+                elif kd == dvm.KIND_STRING:
+                   self._connect_ref(i, stringids, x.get_ref_kind())
+                elif kd == dvm.KIND_FIELD:
+                   self._connect_ref(i, fieldids, x.get_ref_kind())
+                elif kd == dvm.KIND_TYPE:
+                   self._connect_ref(i, typeids, x.get_ref_kind())
+
+                nb += 1
+
+            if i[0].tries_size > 0:
+               for handlers in i[0].get_handlers().get_list():
+                   for x in handlers.get_handlers():
+                       self._connect_ref(i, typeids, x.get_type_idx())
 
         classdatas = getattr(self, dvm.TYPE_MAP_ITEM[0x2000])
         # encoded_field->field_idx_diff
@@ -174,18 +223,20 @@ class Dex(object):
             i = classdatas[k]
             def connect_ref_f(size, obj, idx):
                 for idx in range(0, size):
-                    self._connect_ref(i, fieldids,  int(obj[idx].field_idx_diff))
+                    self._connect_ref(i, fieldids,  int(obj[idx].field_idx))
 
             def connect_ref_m(size, obj, idx):
                 for idx in range(0, size):
-                    self._connect_ref(i, methodids,  int(obj[idx].method_idx_diff))
+                    self._connect_ref(i, methodids,  int(obj[idx].method_idx))
                     if int(obj[idx].code_off) != 0:
                        self._connect_ref(i, codeitems,  int(obj[idx].code_off))
-          
+         
             connect_ref_f(i[0].static_fields_size,   i[0].static_fields,   idx) 
             connect_ref_f(i[0].instance_fields_size, i[0].instance_fields, idx) 
             connect_ref_m(i[0].direct_methods_size,  i[0].direct_methods,  idx) 
             connect_ref_m(i[0].virtual_methods_size, i[0].virtual_methods, idx) 
+
+            i[0].show()
 
         anndicitems = getattr(self, dvm.TYPE_MAP_ITEM[0x2006])
         # class_annotations annotation_set_item
@@ -212,7 +263,7 @@ class Dex(object):
         for i in classdefs:
             self._connect_ref(i, typeids,   i[0].class_idx)
             self._connect_ref(i, typeids,   i[0].superclass_idx)
-
+          
             if i[0].source_file_idx != 0xffffffff:
                self._connect_ref(i, stringids, i[0].source_file_idx)
 
@@ -227,6 +278,8 @@ class Dex(object):
 
             if i[0].static_values_off != 0:
                self._connect_ref(i, encodearraryitems,  i[0].static_values_off)
+
+            i[0].show()
 
         return 0
 
@@ -266,28 +319,28 @@ class Dex(object):
             _sum = 0.0
             for item in ref_class:
                 ls, indent = item[0], item[1]
-                a_list.append(ls[0])
+                a_list.append((ls[0].offset, ls[0]))
                 size = ls[1]/float(ls[3] if ls[3] > 0 else 1)
-                print " " * indent, ls[0], ls[1], ls[3], size
-                if type(ls[0]) is dvm.DalvikCode:
-                   ls[0].show()
+                #print " " * indent, ls[0], ls[1], ls[3], size
+                #if type(ls[0]) is dvm.DalvikCode:
+                #   ls[0].show()
                 _sum += size
 
             a_sum += _sum
-            print "Sum is:", _sum
+            #print "Sum is:", _sum
 
         #print "Total:", a_sum
 
-        def make_unique(original_list):
-            unique_list = []
-            [unique_list.append(obj) for obj in original_list if obj not in unique_list]
-            return unique_list
+        a_dic = {}
+        for i in a_list:
+            a_dic[i[0]] = i[1]
+ 
+        v = 0
+        for k in a_dic.keys():
+            v += a_dic[k].meta_size
 
-        #print "start"
-        #print "Sum2:", sum([x.meta.size for x in make_unique(a_list)])
-        #print a_list
-
-
+        print v
+       
 dex = Dex("./classes.dex")
 dex.analyze()
 
