@@ -6682,7 +6682,6 @@ class CodeHItem(object):
         self.code = []
         self.__code_off = {}
 
-        print "-----"
         for i in xrange(0, size):
             x = DalvikCode( buff, cm )
             self.code.append( x )
@@ -6802,7 +6801,6 @@ class MapItem(object):
             self.item = [ StringDataItem( buff, cm ) for i in xrange(0, self.size) ]
 
         elif TYPE_MAP_ITEM[ self.type ] == "TYPE_DEBUG_INFO_ITEM":
-            print "Debugging:", self.size
             self.item = [ DebugInfoItem( buff, cm ) for i in xrange(0, self.size) ]
 
         elif TYPE_MAP_ITEM[ self.type ] == "TYPE_ENCODED_ARRAY_ITEM":
