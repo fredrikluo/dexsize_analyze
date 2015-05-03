@@ -19,6 +19,13 @@ class Dex(object):
 
             return [] 
 
+    class DexTreeItem(object):
+        def __init__(self, obj, size):
+            self.obj = obj
+            self.size = size
+            self.child = []
+            self.ref_count = 0
+
     def __init__(self,filename):
         if filename == None: 
             raise(Exception("Null File Name."))        
@@ -49,14 +56,16 @@ class Dex(object):
         for k in dvm.TYPE_MAP_ITEM.keys():
             name = dvm.TYPE_MAP_ITEM[k]
             obj_ls =  self.MapListItemAccessor(self._dex.map_list.get_item_type( name )).get_obj()
+
             for obj in obj_ls:
+                item = Dex.DexTreeItem(obj, obj.meta_size)
                 if k >= 0x1000:
-                   getattr(self, name)[obj.get_off()] = [obj, obj.meta_size, [], 0]
+                   getattr(self, name)[obj.get_off()] = item
                 else:
-                   getattr(self, name).append([obj, obj.meta_size, [], 0])
+                   getattr(self, name).append(item)
 
     def _connect_ref(self, ls, target, target_idx):
-        ls[2].append(target[target_idx])
+        ls.child.append(target[target_idx])
 
     def _build_reference_map(self):
         # header has no reference items
@@ -71,48 +80,48 @@ class Dex(object):
         # string_id
         stringids = getattr(self, dvm.TYPE_MAP_ITEM[0x0001])
         for i in stringids:
-            self._connect_ref(i, stringdatas, i[0].string_data_off)
+            self._connect_ref(i, stringdatas, i.obj.string_data_off)
      
         # type_id
         typeids = getattr(self, dvm.TYPE_MAP_ITEM[0x0002])
         for i in typeids:
-            self._connect_ref(i, stringids, i[0].descriptor_idx)
+            self._connect_ref(i, stringids, i.obj.descriptor_idx)
 
         # field_id
         fieldids = getattr(self, dvm.TYPE_MAP_ITEM[0x0004])
         for i in fieldids:
-            self._connect_ref(i, typeids,   i[0].class_idx)
-            self._connect_ref(i, typeids,   i[0].type_idx)
-            self._connect_ref(i, stringids, i[0].name_idx)
+            self._connect_ref(i, typeids,   i.obj.class_idx)
+            self._connect_ref(i, typeids,   i.obj.type_idx)
+            self._connect_ref(i, stringids, i.obj.name_idx)
 
         typelists = getattr(self, dvm.TYPE_MAP_ITEM[0x1001])
         # add type_idx in type_item
         for k in typelists.keys():
             i  = typelists[k]
-            for idx in range(0, i[0].size):
-                self._connect_ref(i, typeids, i[0].list[idx].type_idx)
+            for idx in range(0, i.obj.size):
+                self._connect_ref(i, typeids, i.obj.list[idx].type_idx)
 
         # proto_id
         protoids = getattr(self, dvm.TYPE_MAP_ITEM[0x0003])
         for i in protoids:
-            self._connect_ref(i, stringids, i[0].shorty_idx)
-            self._connect_ref(i, typeids,   i[0].return_type_idx)
-            if i[0].parameters_off != 0:
-               self._connect_ref(i, typelists, i[0].parameters_off)
+            self._connect_ref(i, stringids, i.obj.shorty_idx)
+            self._connect_ref(i, typeids,   i.obj.return_type_idx)
+            if i.obj.parameters_off != 0:
+               self._connect_ref(i, typelists, i.obj.parameters_off)
 
         # method_id
         methodids = getattr(self, dvm.TYPE_MAP_ITEM[0x0005])
         for i in methodids:
-            self._connect_ref(i, typeids,   i[0].class_idx)
-            self._connect_ref(i, protoids,  i[0].proto_idx)
-            self._connect_ref(i, stringids, i[0].name_idx)
+            self._connect_ref(i, typeids,   i.obj.class_idx)
+            self._connect_ref(i, protoids,  i.obj.proto_idx)
+            self._connect_ref(i, stringids, i.obj.name_idx)
 
         annitems = getattr(self, dvm.TYPE_MAP_ITEM[0x2004])
         # -> encoded_annotation -> type_idx
         #    annotation_element -> name_idx
         for k in annitems.keys():
             i = annitems[k]
-            obj = i[0].annotation
+            obj = i.obj.annotation
             self._connect_ref(i, typeids,   int(obj.type_idx))
             for idx in range (0, int(obj.size)):
                 self._connect_ref(i, stringids,  int(obj.elements[idx].name_idx))
@@ -122,8 +131,8 @@ class Dex(object):
         # annotation_off_item
         for k in annsetitems.keys():
             i = annsetitems[k]
-            entries = i[0].annotation_off_item
-            for idx in range(0, i[0].size):
+            entries = i.obj.annotation_off_item
+            for idx in range(0, i.obj.size):
                 self._connect_ref(i, annitems, entries[idx].annotation_off)
 
         ann_ref_sets = getattr(self, dvm.TYPE_MAP_ITEM[0x1002])
@@ -132,15 +141,15 @@ class Dex(object):
         # annotation_off_item
         for k in ann_ref_sets.keys():
             i = ann_ref_sets[k]
-            ls = i[0].list
-            for idx in range(0, i[0].size):
-                self._connect_ref(i, annsetitems,  ls[i[0].annotations_off])
+            ls = i.obj.list
+            for idx in range(0, i.obj.size):
+                self._connect_ref(i, annsetitems,  ls[i.obj.annotations_off])
 
         encodearraryitems = getattr(self, dvm.TYPE_MAP_ITEM[0x2005])
         # encoded array items
         for k in encodearraryitems.keys():
             i = encodearraryitems[k]
-            obj = i[0]
+            obj = i.obj
             for x in obj.get_value().get_values():
                 vt = x.get_value_type()
                 if vt == dvm.VALUE_STRING:
@@ -165,11 +174,11 @@ class Dex(object):
         #                               ->type_idx
         for k in codeitems.keys():
             i = codeitems[k]
-            if int(i[0].debug_info_off) > 0:
-               self._connect_ref(i, debuginfos,  int(i[0].debug_info_off))
+            if int(i.obj.debug_info_off) > 0:
+               self._connect_ref(i, debuginfos,  int(i.obj.debug_info_off))
 
 
-            ins = i[0].code.get_instructions()
+            ins = i.obj.code.get_instructions()
             nb = 0
             for x in ins:
                 if not hasattr(x, "get_kind"):
@@ -189,15 +198,15 @@ class Dex(object):
                       # This is a special case, with new-arrary, the type
                       # would point to "[className" type, which implicitly
                       # points to className
-                      type_str = stringdatas[stringids[typeids[x.get_ref_kind()][0].descriptor_idx][0].string_data_off][0].get()
+                      type_str = stringdatas[stringids[typeids[x.get_ref_kind()].obj.descriptor_idx].obj.string_data_off].obj.get()
                       type_str = type_str[1:]
                       for ti, val in enumerate(typeids):
-                          if type_str == stringdatas[stringids[val[0].descriptor_idx][0].string_data_off][0].get():
+                          if type_str == stringdatas[stringids[val.obj.descriptor_idx].obj.string_data_off].obj.get():
                              self._connect_ref(i, typeids, ti)
                 nb += 1
 
-            if i[0].tries_size > 0:
-               for handlers in i[0].get_handlers().get_list():
+            if i.obj.tries_size > 0:
+               for handlers in i.obj.get_handlers().get_list():
                    for x in handlers.get_handlers():
                        self._connect_ref(i, typeids, x.get_type_idx())
 
@@ -217,10 +226,10 @@ class Dex(object):
                     if int(obj[idx].code_off) != 0:
                        self._connect_ref(i, codeitems,  int(obj[idx].code_off))
          
-            connect_ref_f(i[0].static_fields_size,   i[0].static_fields,   idx) 
-            connect_ref_f(i[0].instance_fields_size, i[0].instance_fields, idx) 
-            connect_ref_m(i[0].direct_methods_size,  i[0].direct_methods,  idx) 
-            connect_ref_m(i[0].virtual_methods_size, i[0].virtual_methods, idx) 
+            connect_ref_f(i.obj.static_fields_size,   i.obj.static_fields,   idx) 
+            connect_ref_f(i.obj.instance_fields_size, i.obj.instance_fields, idx) 
+            connect_ref_m(i.obj.direct_methods_size,  i.obj.direct_methods,  idx) 
+            connect_ref_m(i.obj.virtual_methods_size, i.obj.virtual_methods, idx) 
 
         anndicitems = getattr(self, dvm.TYPE_MAP_ITEM[0x2006])
         # class_annotations annotation_set_item
@@ -232,41 +241,41 @@ class Dex(object):
         #                   -> annotations_off (annotation_set_item)
         for k in anndicitems.keys():
             i = anndicitems[k]
-            self._connect_ref(i, annsetitems, i[0].class_annotations_off)
+            self._connect_ref(i, annsetitems, i.obj.class_annotations_off)
 
             def connect_ref_ann(size, target, obj, idx):
                 for idx in range (0, size):
                      self._connect_ref(i, target, obj[idx])
 
-            connect_ref_ann(i[0].annotated_fields_size, fieldids, i[0].field_annotations, idx)
-            connect_ref_ann(i[0].annotated_methods_size, methodids, i[0].method_annotations, idx)
-            connect_ref_ann(i[0].annotated_parameters_size, methodids, i[0].parameter_annotations, idx)
+            connect_ref_ann(i.obj.annotated_fields_size, fieldids, i.obj.field_annotations, idx)
+            connect_ref_ann(i.obj.annotated_methods_size, methodids, i.obj.method_annotations, idx)
+            connect_ref_ann(i.obj.annotated_parameters_size, methodids, i.obj.parameter_annotations, idx)
 
         # classdefs
         classdefs = getattr(self, dvm.TYPE_MAP_ITEM[0x0006])
         for i in classdefs:
-            self._connect_ref(i, typeids,   i[0].class_idx)
-            self._connect_ref(i, typeids,   i[0].superclass_idx)
+            self._connect_ref(i, typeids,   i.obj.class_idx)
+            self._connect_ref(i, typeids,   i.obj.superclass_idx)
           
-            if i[0].source_file_idx != 0xffffffff:
-               self._connect_ref(i, stringids, i[0].source_file_idx)
+            if i.obj.source_file_idx != 0xffffffff:
+               self._connect_ref(i, stringids, i.obj.source_file_idx)
 
-            if i[0].interfaces_off != 0:
-               self._connect_ref(i, typelists, i[0].interfaces_off)
+            if i.obj.interfaces_off != 0:
+               self._connect_ref(i, typelists, i.obj.interfaces_off)
 
-            if i[0].annotations_off != 0:
-               self._connect_ref(i, anndicitems, i[0].annotations_off)
+            if i.obj.annotations_off != 0:
+               self._connect_ref(i, anndicitems, i.obj.annotations_off)
 
-            if i[0].class_data_off != 0:
-               self._connect_ref(i, classdatas, i[0].class_data_off)
+            if i.obj.class_data_off != 0:
+               self._connect_ref(i, classdatas, i.obj.class_data_off)
 
-            if i[0].static_values_off != 0:
-               self._connect_ref(i, encodearraryitems,  i[0].static_values_off)
+            if i.obj.static_values_off != 0:
+               self._connect_ref(i, encodearraryitems,  i.obj.static_values_off)
 
     def _walk(self, i, op, indent, op_obj):
         indent += 1
         op(i, indent, op_obj)
-        for x in i[2]:
+        for x in i.child:
             self._walk(x, op, indent, op_obj)
         indent -= 1
 
@@ -274,7 +283,7 @@ class Dex(object):
         # The start point is always classdefs
         classdefs = getattr(self, dvm.TYPE_MAP_ITEM[0x0006])
         def op(obj, i, o_o):
-             obj[3] += 1
+             obj.ref_count += 1
         for i in classdefs:
             self._walk(i, op, 0, 0)
 
@@ -292,18 +301,18 @@ class Dex(object):
             _sum = 0.0
             for item in ref_class:
                 ls, indent = item[0], item[1]
-                a_list.append((ls[0].offset, ls[0]))
-                size = ls[1]/float(ls[3] if ls[3] > 0 else 1)
-                #print " " * indent, ls[0], ls[1], ls[3], size
+                a_list.append((ls.obj.offset, ls.obj))
+                assert(ls.ref_count > 0)
+                size = ls.size/float(ls.ref_count)
+                #print " " * indent, ls.obj, ls.size, ls.ref_count, size
                 _sum += size
 
             a_sum += _sum
-            print "Class {0}, {1:.2f}".format(i[0].get_name(),  _sum)
+            print "Class {0}, {1:.2f}".format(i.obj.get_name(),  _sum)
 
         print "Total:", a_sum
  
     def _sanity_check(self): 
-        print "Unreferenced_item: --"
         # Inspect unreferenced the item list 
         for k in dvm.TYPE_MAP_ITEM.keys():
             name = dvm.TYPE_MAP_ITEM[k]
@@ -318,17 +327,17 @@ class Dex(object):
             if k >= 0x1000:
                for kt in getattr(self, name).keys():
                    obj = getattr(self, name)[kt]
-                   if obj[3] == 0:
-                      print obj[0], obj[0].offset
+                   if obj.ref_count == 0:
+                      print obj.obj, obj.obj.offset
                       found = True
-                      obj[0].show()
+                      obj.obj.show()
             else:
                for i in getattr(self, name):
-                   if i[3] == 0:
+                   if i.ref_count == 0:
                       print "---Dumping ---"
-                      print i[0], i[0].offset
+                      print i.obj, i.obj.offset
                       found = True
-                      i[0].show()
+                      i.obj.show()
 
             assert(not found and "BUG! must have no unreferenced item")
 
@@ -340,11 +349,11 @@ class Dex(object):
             s = 0
             if k >= 0x1000:
                for kt in getattr(self, name).keys():
-                   s += getattr(self, name)[kt][1]
+                   s += getattr(self, name)[kt].size
                print name,s
             else:
                for i in getattr(self, name):
-                    s += i[1]
+                    s += i.size
                print name ,s
    
             a_s += s
