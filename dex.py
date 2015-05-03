@@ -105,11 +105,9 @@ class Dex(object):
         # maplists = dvm.TYPE_MAP_ITEM[0x1000]
         # ingore the map list for now
         maplists = getattr(self, dvm.TYPE_MAP_ITEM[0x1000])
-        print maplists
 
         # Node with no reference to others
         stringdatas = getattr(self, dvm.TYPE_MAP_ITEM[0x2002])
-        encodearraryitems = getattr(self, dvm.TYPE_MAP_ITEM[0x2005])
         debuginfos = getattr(self, dvm.TYPE_MAP_ITEM[0x2003])
 
         # string_id
@@ -180,6 +178,29 @@ class Dex(object):
             for idx in range(0, i[0].size):
                 self._connect_ref(i, annsetitems,  ls[i[0].annotations_off])
 
+        encodearraryitems = getattr(self, dvm.TYPE_MAP_ITEM[0x2005])
+        print "--- encode : dumping --"
+        # encoded array items
+        for k in encodearraryitems.keys():
+            i = encodearraryitems[k]
+            obj = i[0]
+            for x in obj.get_value().get_values():
+                vt = x.get_value_type()
+                if vt == dvm.VALUE_STRING:
+                   self._connect_ref(i, stringids, x.mapped_id)
+                elif vt == dvm.VALUE_TYPE:
+                   self._connect_ref(i, typids,  x.mapped_id)
+                elif vt == dvm.VALUE_FIELD:
+                   self._connect_ref(i, fieldids, x.mapped_id)
+                elif vt == dvm.VALUE_METHOD:
+                   self._connect_ref(i, methodids, x.mapped_id)
+                elif vt == dvm.VALUE_ANNOTATION:
+                   assert(False)
+                elif vt == dvm.VALUE_ARRAY:
+                     pass
+                else:
+                     pass
+
         codeitems = getattr(self, dvm.TYPE_MAP_ITEM[0x2001])
         # debug_info_off
         # encoded_catch_handler_list->encoded_catch_handler
@@ -236,8 +257,6 @@ class Dex(object):
             connect_ref_m(i[0].direct_methods_size,  i[0].direct_methods,  idx) 
             connect_ref_m(i[0].virtual_methods_size, i[0].virtual_methods, idx) 
 
-            i[0].show()
-
         anndicitems = getattr(self, dvm.TYPE_MAP_ITEM[0x2006])
         # class_annotations annotation_set_item
         # field_annotations -> field_idx (field_ids)
@@ -279,7 +298,6 @@ class Dex(object):
             if i[0].static_values_off != 0:
                self._connect_ref(i, encodearraryitems,  i[0].static_values_off)
 
-            i[0].show()
 
         return 0
 
