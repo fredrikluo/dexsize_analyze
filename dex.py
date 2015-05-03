@@ -161,8 +161,10 @@ class Dex(object):
                 elif vt == dvm.VALUE_METHOD:
                    self._connect_ref(i, methodids, x.mapped_id)
                 elif vt == dvm.VALUE_ANNOTATION:
+                   # Need to reference to annotation and name, and type
                    assert(False)
                 elif vt == dvm.VALUE_ARRAY:
+                   # Need to decode it.
                      pass
                 else:
                      pass
