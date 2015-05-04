@@ -1,4 +1,5 @@
 import dvm
+import sys
 
 class Dex(object):
 
@@ -367,5 +368,5 @@ class Dex(object):
         print a_s
 
    
-dex = Dex("./classes.dex")
+dex = Dex(sys.argv[1])
 dex.analyze()
