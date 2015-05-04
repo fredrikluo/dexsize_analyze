@@ -67,6 +67,30 @@ class Dex(object):
     def _connect_ref(self, ls, target, target_idx):
         ls.child.append(target[target_idx])
 
+    def _connect_encoded_annotation(self, i, obj, stringids, typeids):
+        obj = i.obj.annotation
+        self._connect_ref(i, typeids,   int(obj.type_idx))
+        for idx in range (0, int(obj.size)):
+            self._connect_ref(i, stringids,  int(obj.elements[idx].name_idx))
+
+    def _connect_encoded_array_item(self, i, obj, stringids, typids, fieldids, methodids):
+        for x in obj.get_value().get_values():
+            vt = x.get_value_type()
+            if vt == dvm.VALUE_STRING:
+               self._connect_ref(i, stringids, x.mapped_id)
+            elif vt == dvm.VALUE_TYPE:
+               self._connect_ref(i, typids,  x.mapped_id)
+            elif vt == dvm.VALUE_FIELD:
+               self._connect_ref(i, fieldids, x.mapped_id)
+            elif vt == dvm.VALUE_METHOD:
+               self._connect_ref(i, methodids, x.mapped_id)
+            elif vt == dvm.VALUE_ANNOTATION:
+               self._connect_encoded_annotation(i, i.value, typeids)
+            elif vt == dvm.VALUE_ARRAY:
+               self._connect_encoded_array_item(self, i, x.value, stringids, typids, fieldids, methodids)
+            else:
+               pass
+
     def _build_reference_tree(self):
         # header has no reference items
         # maplists = dvm.TYPE_MAP_ITEM[0x1000]
@@ -121,10 +145,7 @@ class Dex(object):
         #    annotation_element -> name_idx
         for k in annitems.keys():
             i = annitems[k]
-            obj = i.obj.annotation
-            self._connect_ref(i, typeids,   int(obj.type_idx))
-            for idx in range (0, int(obj.size)):
-                self._connect_ref(i, stringids,  int(obj.elements[idx].name_idx))
+            self._connect_encoded_annotation(i, i.obj.annotation, stringids, typeids)
 
         annsetitems = getattr(self, dvm.TYPE_MAP_ITEM[0x1003])
         # link to annotation_item
@@ -150,24 +171,7 @@ class Dex(object):
         for k in encodearraryitems.keys():
             i = encodearraryitems[k]
             obj = i.obj
-            for x in obj.get_value().get_values():
-                vt = x.get_value_type()
-                if vt == dvm.VALUE_STRING:
-                   self._connect_ref(i, stringids, x.mapped_id)
-                elif vt == dvm.VALUE_TYPE:
-                   self._connect_ref(i, typids,  x.mapped_id)
-                elif vt == dvm.VALUE_FIELD:
-                   self._connect_ref(i, fieldids, x.mapped_id)
-                elif vt == dvm.VALUE_METHOD:
-                   self._connect_ref(i, methodids, x.mapped_id)
-                elif vt == dvm.VALUE_ANNOTATION:
-                   # Need to reference to annotation and name, and type
-                   assert(False)
-                elif vt == dvm.VALUE_ARRAY:
-                   # Need to decode it.
-                     pass
-                else:
-                     pass
+            self._connect_encoded_array_item(i, obj,stringids, fieldids, methodids, typeids)
 
         codeitems = getattr(self, dvm.TYPE_MAP_ITEM[0x2001])
         # debug_info_off
