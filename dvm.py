@@ -1463,7 +1463,7 @@ class EncodedValue(object):
             self.mapped_id, self.raw_value = self._getintvalue(buff.read( self.value_arg + 1 ))
             self.value = cm.get_method(self.mapped_id)
         elif self.value_type == VALUE_ENUM:
-            self.mappedid, self.raw_value = self._getintvalue(buff.read( self.value_arg + 1 ))
+            self.mapped_id, self.raw_value = self._getintvalue(buff.read( self.value_arg + 1 ))
             self.value = cm.get_field(self.mapped_id)
         elif self.value_type == VALUE_ARRAY:
             self.value = EncodedArray( buff, cm )
