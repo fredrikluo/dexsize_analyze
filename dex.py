@@ -68,29 +68,34 @@ class Dex(object):
     def _connect_ref(self, ls, target, target_idx):
         ls.child.append(target[target_idx])
 
-    def _connect_encoded_annotation(self, i, obj, stringids, typeids):
-        obj = i.obj.annotation
+    def _connect_encoded_value(self, i, x, stringids, typeids, fieldids, methodids):
+        vt = x.get_value_type()
+        if vt == dvm.VALUE_STRING:
+           self._connect_ref(i, stringids, x.mapped_id)
+        elif vt == dvm.VALUE_TYPE:
+            self._connect_ref(i, typeids,  x.mapped_id)
+        elif vt == dvm.VALUE_FIELD:
+            self._connect_ref(i, fieldids, x.mapped_id)
+        elif vt == dvm.VALUE_METHOD:
+            self._connect_ref(i, methodids, x.mapped_id)
+        elif vt == dvm.VALUE_ANNOTATION:
+            self._connect_encoded_annotation(i, x.value, stringids, typeids, fieldids, methodids)
+        elif vt == dvm.VALUE_ARRAY:
+            self._connect_encoded_array_item(i, x.value, stringids, typeids, fieldids, methodids)
+        elif vt == dvm.VALUE_ENUM:
+            self._connect_ref(i, fieldids, x.mapped_id)
+        else:
+            pass
+
+    def _connect_encoded_annotation(self, i, obj, stringids, typeids, fieldids, methodids):
         self._connect_ref(i, typeids,   int(obj.type_idx))
         for idx in range (0, int(obj.size)):
             self._connect_ref(i, stringids,  int(obj.elements[idx].name_idx))
+            self._connect_encoded_value(i, obj.elements[idx].value, stringids, typeids, fieldids, methodids)
 
-    def _connect_encoded_array_item(self, i, obj, stringids, typids, fieldids, methodids):
-        for x in obj.get_value().get_values():
-            vt = x.get_value_type()
-            if vt == dvm.VALUE_STRING:
-               self._connect_ref(i, stringids, x.mapped_id)
-            elif vt == dvm.VALUE_TYPE:
-               self._connect_ref(i, typids,  x.mapped_id)
-            elif vt == dvm.VALUE_FIELD:
-               self._connect_ref(i, fieldids, x.mapped_id)
-            elif vt == dvm.VALUE_METHOD:
-               self._connect_ref(i, methodids, x.mapped_id)
-            elif vt == dvm.VALUE_ANNOTATION:
-               self._connect_encoded_annotation(i, i.value, typeids)
-            elif vt == dvm.VALUE_ARRAY:
-               self._connect_encoded_array_item(self, i, x.value, stringids, typids, fieldids, methodids)
-            else:
-               pass
+    def _connect_encoded_array_item(self, i, obj, stringids, typeids, fieldids, methodids):
+        for x in obj.get_values():
+            self._connect_encoded_value(i, x, stringids, typeids, fieldids, methodids)
 
     def _build_reference_tree(self):
         # header has no reference items
@@ -100,18 +105,46 @@ class Dex(object):
 
         # Node with no reference to others
         stringdatas = getattr(self, dvm.TYPE_MAP_ITEM[0x2002])
-        debuginfos = getattr(self, dvm.TYPE_MAP_ITEM[0x2003])
 
         # string_id
         stringids = getattr(self, dvm.TYPE_MAP_ITEM[0x0001])
         for i in stringids:
             self._connect_ref(i, stringdatas, i.obj.string_data_off)
-     
+
         # type_id
         typeids = getattr(self, dvm.TYPE_MAP_ITEM[0x0002])
         for i in typeids:
             self._connect_ref(i, stringids, i.obj.descriptor_idx)
 
+        # debuginfos
+        debuginfos = getattr(self, dvm.TYPE_MAP_ITEM[0x2003])
+        for k in debuginfos.keys():
+            i  = debuginfos[k]
+            # parameter_names
+            for pi in i.obj.get_parameter_names():
+                self._connect_ref(i, stringids, pi)
+
+            # dissemble the debug code to find the string reference. 
+            for d in i.obj.get_bytecodes():
+                # find the string reference.
+                bcode_value = d.get_op_value()
+                if bcode_value == dvm.DBG_START_LOCAL:
+                   #
+                   name_idx = d.format[1][0]
+                   type_idx = d.format[2][0]
+                   if name_idx != -1 :self._connect_ref(i, stringids, name_idx)
+                   if type_idx != -1 :self._connect_ref(i, typeids, type_idx)
+                elif bcode_value == dvm.DBG_START_LOCAL_EXTENDED:
+                   name_idx = d.format[1][0]
+                   type_idx = d.format[2][0]
+                   sig_idx  = d.format[3][0]
+                   if name_idx != -1 :self._connect_ref(i, stringids, name_idx)
+                   if sig_idx != -1  :self._connect_ref(i, stringids, sig_idx)
+                   if type_idx != -1 :self._connect_ref(i, typeids, type_idx)
+                elif bcode_value == dvm.DBG_SET_FILE:
+                   str_idx = d.format[0][0]
+                   if str_idx != -1 :self._connect_ref(i, stringids, str_idx)
+     
         # field_id
         fieldids = getattr(self, dvm.TYPE_MAP_ITEM[0x0004])
         for i in fieldids:
@@ -146,7 +179,7 @@ class Dex(object):
         #    annotation_element -> name_idx
         for k in annitems.keys():
             i = annitems[k]
-            self._connect_encoded_annotation(i, i.obj.annotation, stringids, typeids)
+            self._connect_encoded_annotation(i, i.obj.annotation, stringids, typeids, fieldids, methodids)
 
         annsetitems = getattr(self, dvm.TYPE_MAP_ITEM[0x1003])
         # link to annotation_item
@@ -172,7 +205,7 @@ class Dex(object):
         for k in encodearraryitems.keys():
             i = encodearraryitems[k]
             obj = i.obj
-            self._connect_encoded_array_item(i, obj,stringids, fieldids, methodids, typeids)
+            self._connect_encoded_array_item(i, obj.get_value() ,stringids, fieldids, methodids, typeids)
 
         codeitems = getattr(self, dvm.TYPE_MAP_ITEM[0x2001])
         # debug_info_off
@@ -200,6 +233,9 @@ class Dex(object):
                 elif kd == dvm.KIND_FIELD:
                    self._connect_ref(i, fieldids, x.get_ref_kind())
                 elif kd == dvm.KIND_TYPE:
+                   if x.get_ref_kind() > len(typeids):
+                      continue
+
                    self._connect_ref(i, typeids, x.get_ref_kind())
                    if x.get_name() == "new-array":
                       # This is a special case, with new-arrary, the type
@@ -371,4 +407,4 @@ class Dex(object):
 
    
 dex = Dex(sys.argv[1])
-dex.analyze()
+#dex.analyze()
