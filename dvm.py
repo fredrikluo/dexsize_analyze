@@ -17,7 +17,6 @@
 
 import bytecode
 from androconf import CONF, debug, warning, is_android_raw
-#from androguard.util import read
 
 import sys
 import re
