@@ -129,7 +129,6 @@ class Dex(object):
                 # find the string reference.
                 bcode_value = d.get_op_value()
                 if bcode_value == dvm.DBG_START_LOCAL:
-                   #
                    name_idx = d.format[1][0]
                    type_idx = d.format[2][0]
                    if name_idx != -1 :self._connect_ref(i, stringids, name_idx)
