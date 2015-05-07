@@ -50,7 +50,7 @@ class Dex(object):
         self._build_refcount()
 
         # Sanity test
-        self._sanity_check()
+        self._unreferenced_check()
  
         # Inspect map
         # self._inspect_map()
@@ -358,7 +358,7 @@ class Dex(object):
 
         print "Total:", a_sum
  
-    def _sanity_check(self): 
+    def _unreferenced_check(self):
         # Inspect unreferenced the item list 
         for k in dvm.TYPE_MAP_ITEM.keys():
             name = dvm.TYPE_MAP_ITEM[k]
@@ -380,7 +380,7 @@ class Dex(object):
             else:
                for i in getattr(self, name):
                    if i.ref_count == 0:
-                      print "---Dumping ---"
+                      print "---Unreferenced Object ---"
                       print i.obj, i.obj.offset
                       found = True
                       i.obj.show()
@@ -408,4 +408,4 @@ class Dex(object):
 
    
 dex = Dex(sys.argv[1])
-#dex.analyze()
+dex.analyze()
