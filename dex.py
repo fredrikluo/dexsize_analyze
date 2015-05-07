@@ -23,11 +23,13 @@ class Dex(object):
             return [] 
 
     class DexTreeItem(object):
-        def __init__(self, obj, size):
+        def __init__(self, obj, size, parent = None):
             self.obj = obj
             self.size = size
             self.child = []
             self.ref_count = 0
+            self.parent = parent
+            self.cum = 0
 
     def __init__(self,filename):
         if filename == None: 
@@ -69,6 +71,7 @@ class Dex(object):
 
     def _connect_ref(self, ls, target, target_idx):
         ls.child.append(target[target_idx])
+        target[target_idx].parent = ls
 
     def _connect_encoded_value(self, i, x, stringids, typeids, fieldids, methodids):
         vt = x.get_value_type()
@@ -318,20 +321,70 @@ class Dex(object):
             if i.obj.static_values_off != 0:
                self._connect_ref(i, encodearraryitems,  i.obj.static_values_off)
 
-    def _walk(self, i, op, indent, op_obj):
+    def _walk(self, i, op, indent, op_obj, parent = None, ret = 0):
         indent += 1
-        op(i, indent, op_obj)
+        ret_1 = op(i, indent, op_obj, parent, ret)
         for x in i.child:
-            self._walk(x, op, indent, op_obj)
+            self._walk(x, op, indent, op_obj, i, ret_1)
         indent -= 1
 
     def _build_refcount(self):
         # The start point is always classdefs
         classdefs = getattr(self, dvm.TYPE_MAP_ITEM[0x0006])
-        def op(obj, i, o_o):
+        def op(obj, i, o_o, p, ret):
              obj.ref_count += 1
+             return ret
+
         for i in classdefs:
-            self._walk(i, op, 0, 0)
+            self._walk(i, op, 0, 0, 0)
+
+        return 0
+
+    def analyze_1(self):
+        def sum_up(item):
+            result = [0]
+            def op_s(obj, i, ref, p, r):
+                ref[0] += obj.size/float(max(obj.ref_count,1))
+                return r 
+
+            self._walk(item, op_s, 0, result)
+            item.cum = result[0]
+
+    #   print "start --"
+    #    for k in dvm.TYPE_MAP_ITEM.keys():
+    #        name = dvm.TYPE_MAP_ITEM[k]
+    #        obj_set = getattr(self, name)
+    #        if k > 0x1000:
+    #           for ok in obj_set.keys():
+    #               sum_up(obj_set[ok])
+    #        else:
+    #           for item in obj_set:
+    #               sum_up(item)
+
+        print "start gen --"
+        item_list = [] 
+        for k in dvm.TYPE_MAP_ITEM.keys():
+            name = dvm.TYPE_MAP_ITEM[k]
+            obj_set = getattr(self, name)
+            if k >= 0x1000:
+               for ok in obj_set.keys():
+                   item = obj_set[ok]
+                   sum_up(item)
+                   item_list.append([item.obj, item.cum, item.size])
+            else:
+               for item in obj_set:
+                   sum_up(item)
+                   item_list.append([item.obj, item.cum, item.size])
+ 
+        print "start sort --"
+        item_list = sorted(item_list, key = lambda x:-x[1])
+        cum_sum = 0
+        for i in item_list:
+            if type(i[0]) is dvm.ClassDefItem:
+               cum_sum += i[1] 
+            print i
+
+        print cum_sum
 
     def analyze(self):
         # Walk through the class list
@@ -343,21 +396,57 @@ class Dex(object):
             ref_class = []
 
             self._walk(i, lambda obj, i, ref: ref.append([obj, i]),0, ref_class)
-
             _sum = 0.0
             for item in ref_class:
                 ls, indent = item[0], item[1]
                 a_list.append((ls.obj.offset, ls.obj))
                 assert(ls.ref_count > 0)
                 size = ls.size/float(ls.ref_count)
-                #print " " * indent, ls.obj, ls.size, ls.ref_count, size
+                print " " * indent, ls.obj, ls.size, ls.ref_count, size
                 _sum += size
 
             a_sum += _sum
             print "Class {0}, {1:.2f}".format(i.obj.get_name(),  _sum)
 
         print "Total:", a_sum
+
+    def gen_json(self):
+        classdefs = getattr(self, dvm.TYPE_MAP_ITEM[0x0006])
+
+        # build the item list and dictionary
+        item_list = []
+        item_dic  = {}
+
+        def op_getall(obj, indent, ref_obj, parent, ret):
+            if not ref_obj[0].has_key(obj.obj.offset):
+               ref_obj[0][obj.obj.offset] = len(ref_obj[1])
+               ref_obj[1].append(obj.obj)
+            return ret
+
+        for i in classdefs:
+            ref_obj =[item_dic, item_list]
+            self._walk(i, op_getall ,0, ref_obj)
+
+        # generate the tree index.
+        item_tree_index = []
+        def op_gen(obj, indent, ref_obj, parent, ret):
+            # Create a new node.  
+            node = [ref_obj[1][obj.obj.offset], []]
+            my_index = len(ref_obj[0])
+            ref_obj[0].append(node)
+            if ret >= 0:
+               # Add myself to the parent
+               ref_obj[0][ret][1].append(my_index)
+            return my_index     
  
+        for i in classdefs:
+            ref_obj =[item_tree_index, item_dic, item_list]
+            self._walk(i, op_gen ,0, ref_obj, None, -1)
+      
+        for i in item_tree_index:
+            for x in i:
+                print item_list[x]
+  
     def _unreferenced_check(self):
         # Inspect unreferenced the item list 
         for k in dvm.TYPE_MAP_ITEM.keys():
@@ -408,4 +497,5 @@ class Dex(object):
 
    
 dex = Dex(sys.argv[1])
-dex.analyze()
+#dex.gen_json()
+dex.analyze_1()
