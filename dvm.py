@@ -209,32 +209,21 @@ def readusleb128(buff):
 def readuleb128p1(buff):
   return readuleb128( buff ) - 1
 
-def readsleb128(buff, Debug = False):
-    result = unpack( '=b', buff.read(1) )[0]
+def readsleb128(buff):
+    result = 0
+    shift = 0
 
-    if not result & 0x80:
-        result = (result << 25)
-        if result > 0x7fffffff:
-            result = (0x7fffffff & result) - 0x80000000
-        result = result >> 25
-    else:
-        cur = unpack( '=b', buff.read(1) )[0]
-        result = (result & 0x7f) | ((cur & 0x7f) << 7)
-        if not cur & 0x80:
-            result = (result << 18) >> 18
-        else:
-            cur = unpack( '=b', buff.read(1) )[0]
-            result |= (cur & 0x7f) << 14
-            if not cur & 0x80:
-                result = (result << 11) >> 11
-            else:
-                cur = unpack( '=b', buff.read(1) )[0]
-                result |= (cur & 0x7f) << 21
-                if not cur & 0x80:
-                    result = (result << 4) >> 4
-                else:
-                    cur = unpack( '=b', buff.read(1) )[0]
-                    result |= cur << 28
+    for x in range(0, 5):
+       cur = ord( buff.read(1) )
+       result |= (cur & 0x7f) << shift
+       shift += 7
+       if not cur & 0x80:
+          bit_left = 32 - shift
+          result = result << bit_left
+          if result > 0x7fffffff:
+              result = (0x7fffffff & result) - 0x80000000
+          result = result >> bit_left
+          break
 
     return result
 
@@ -1245,7 +1234,7 @@ class DebugInfoItem(object):
             if bcode_value == DBG_ADVANCE_PC:
                 bcode.add( readuleb128( buff ), "u" )
             elif bcode_value == DBG_ADVANCE_LINE:
-                bcode.add( readsleb128( buff, True ), "s" )
+                bcode.add( readsleb128( buff ), "s" )
             elif bcode_value == DBG_START_LOCAL:
                 bcode.add( readusleb128( buff ), "u" )
                 bcode.add( readuleb128p1( buff ), "u1" )
