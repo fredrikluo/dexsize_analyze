@@ -15,31 +15,37 @@ class DexTreeItem(object):
           self.idx = idx
           self.class_node = None
 
+class MapListItemAccessor(object):
+      def __init__(self, obj):
+          self.obj = obj
+
+      def get_obj(self):
+          if type(self.obj) is list:
+             return self.obj
+
+          if (type(self.obj) is dvm.HeaderItem or 
+              type(self.obj) is dvm.MapList):
+             return [self.obj]
+
+          if hasattr(self.obj, "get_obj"):
+             return self.obj.get_obj()
+
+          return []
+
 class Dex(object):
-
-    class MapListItemAccessor(object):
-        def __init__(self, obj):
-            self.obj = obj
-
-        def get_obj(self):
-            if type(self.obj) is list:
-               return self.obj
-
-            if (type(self.obj) is dvm.HeaderItem or 
-                type(self.obj) is dvm.MapList):
-               return [self.obj]
-
-            if hasattr(self.obj, "get_obj"):
-               return self.obj.get_obj()
-
-            return [] 
-
-
-    def __init__(self,filename):
+    def __init__(self,filename, progon = True):
         if filename == None: 
             raise(Exception("Null File Name."))        
 
-        self._dex = dvm.DalvikVMFormat(open(filename).read(), 'rb')
+        self.filename = filename
+        self.progon = progon
+
+    def _proginfo(self, str):
+        print str 
+
+    def analyze(self):
+        self._proginfo("Loading the dex file...")
+        self._dex = dvm.DalvikVMFormat(open(self.filename).read(), 'rb')
 
         # All the items in the Dex file
         for k in dvm.TYPE_MAP_ITEM.keys():
@@ -47,13 +53,20 @@ class Dex(object):
             setattr(self, name, {} if k >= 0x1000 else [])
 
         # Build the map items
+        self._proginfo("Building map from dexfile...")
         self._build_map()
 
         # Build the reference tree 
+        self._proginfo("Solving all the references...")
         self._build_reference_tree()
 
         # Build the reference count
+        self._proginfo("Calculating reference counters...")
         self._build_refcount()
+
+        # Output statistics
+        self._proginfo("Generating statistics...")
+        self._output_statistics()
 
         # Sanity test
         # self._unreferenced_check()
@@ -64,7 +77,7 @@ class Dex(object):
     def _build_map(self):
         for k in dvm.TYPE_MAP_ITEM.keys():
             name = dvm.TYPE_MAP_ITEM[k]
-            obj_ls =  self.MapListItemAccessor(self._dex.map_list.get_item_type( name )).get_obj()
+            obj_ls = MapListItemAccessor(self._dex.map_list.get_item_type( name )).get_obj()
 
             for idx, obj in enumerate(obj_ls):
                 item = DexTreeItem(obj, obj.meta_size, None, idx)
@@ -345,7 +358,7 @@ class Dex(object):
 
         return 0
 
-    def analyze(self):
+    def _output_statistics(self):
         def sum_up(item):
             result = [0]
             def op_s(obj, i, ref, p, r):
@@ -411,8 +424,11 @@ class Dex(object):
             else:
                for item in obj_set:
                    print_i(item, item_list)
+
+        fmt_str = "{0:<20}{1:<10}{2:<10}{3:<60}{4}"
  
-        print "{0:<20}{1:<10}{2:<10}{3:<25}{4:<50}".format("Type", "Cum.", "Self",  "Content", "Class")
+        print "\033c"
+        print fmt_str.format("Type", "Cum.", "Self",  "Content", "Class")
 
         if len(sys.argv) == 3 and sys.argv[2] == "-s":
            item_list = sorted(item_list, key = lambda x:-x[2])
@@ -420,8 +436,7 @@ class Dex(object):
            item_list = sorted(item_list, key = lambda x:-x[1])
 
         for i in item_list:
-            print "{0:<20}{1:<10}{2:<10}{3:<25}{4:<50}".format(i[0], int(i[1]), int(i[2]), i[4][:20], i[3])
-
+            print fmt_str.format(i[0], int(i[1]), int(i[2]), i[4][:50], i[3])
 
     def _unreferenced_check(self):
         # Inspect unreferenced the item list 
@@ -471,6 +486,5 @@ class Dex(object):
 
         print a_s
 
-   
 dex = Dex(sys.argv[1])
 dex.analyze()
