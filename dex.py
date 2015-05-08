@@ -5,13 +5,15 @@ import sys
 import printer 
 
 class DexTreeItem(object):
-      def __init__(self, obj, size, parent = None):
+      def __init__(self, obj, size, parent = None, idx = 0):
           self.obj = obj
           self.size = size
           self.child = []
           self.ref_count = 0
           self.parent = parent
           self.cum = 0
+          self.idx = idx
+          self.class_node = None
 
 class Dex(object):
 
@@ -64,8 +66,8 @@ class Dex(object):
             name = dvm.TYPE_MAP_ITEM[k]
             obj_ls =  self.MapListItemAccessor(self._dex.map_list.get_item_type( name )).get_obj()
 
-            for obj in obj_ls:
-                item = DexTreeItem(obj, obj.meta_size)
+            for idx, obj in enumerate(obj_ls):
+                item = DexTreeItem(obj, obj.meta_size, None, idx)
                 if k >= 0x1000:
                    getattr(self, name)[obj.get_off()] = item
                 else:
@@ -335,10 +337,11 @@ class Dex(object):
         classdefs = getattr(self, dvm.TYPE_MAP_ITEM[0x0006])
         def op(obj, i, o_o, p, ret):
              obj.ref_count += 1
+             obj.class_node = o_o
              return ret
 
         for i in classdefs:
-            self._walk(i, op, 0, 0, 0)
+            self._walk(i, op, 0, i, 0)
 
         return 0
 
@@ -352,13 +355,50 @@ class Dex(object):
             self._walk(item, op_s, 0, result)
             item.cum = result[0]
 
-        def print_i(item, item_list, idx = 0):
+        def print_i(item, item_list):
             p = printer.Dex_printer()
-            sum_up(item)
-            col1, col2 = p.Print(item.obj, idx)
-            item_list.append([col1, item.cum, item.size, col2])
 
-        print "start gen --"
+            if isinstance(item.obj, dvm.ClassDefItem):
+               sum_up(item)
+               col1, col2 = p.Print(item.obj)
+               item_list.append([col1, item.cum, item.size, col2, ""])
+
+               for i in item.child:
+                   if isinstance(i.obj, dvm.ClassDataItem):
+                      code_dic = {}
+                      for dm in  i.obj.get_direct_methods():
+                          code_dic[dm.get_code_off()] = dm.get_name()
+
+                      for dm in  i.obj.get_virtual_methods():
+                          code_dic[dm.get_code_off()] = dm.get_name()
+
+                      for x in i.child: 
+                          # Find all the methods
+                          if isinstance(x.obj, dvm.DalvikCode):
+                             sum_up(x)
+                             item_list.append(["Method", x.cum, x.size, col2, code_dic[x.obj.get_off()]])
+ 
+            elif (isinstance(item.obj, dvm.DalvikCode) or
+                  isinstance(item.obj, dvm.StringIdItem) or
+                  isinstance(item.obj, dvm.MethodIdItem) or
+                  isinstance(item.obj, dvm.FieldIdItem) or
+                  isinstance(item.obj, dvm.TypeList) or
+                  isinstance(item.obj, dvm.MapList) or
+                  isinstance(item.obj, dvm.ClassDataItem)):
+                 pass
+            else:
+               sum_up(item)
+               idx = 0
+               if (isinstance(item.obj, dvm.StringDataItem)):
+                    idx = item.parent.idx
+               else:
+                    idx = item.idx
+
+               col1, col2 = p.Print(item.obj, idx)
+
+               class_name = p.Print(item.class_node.obj)[1] if item.ref_count == 1 else "many"
+               item_list.append([col1, item.cum, item.size, class_name, col2])
+
         item_list = []
 
         for k in dvm.TYPE_MAP_ITEM.keys():
@@ -369,13 +409,19 @@ class Dex(object):
                    item = obj_set[ok]
                    print_i(item, item_list)
             else:
-               for idx, item in enumerate(obj_set):
-                   print_i(item, item_list, idx)
+               for item in obj_set:
+                   print_i(item, item_list)
  
-        print "start sort --"
-        item_list = sorted(item_list, key = lambda x:-x[1])
+        print "{0:<20}{1:<10}{2:<10}{3:<25}{4:<50}".format("Type", "Cum.", "Self",  "Content", "Class")
+
+        if len(sys.argv) == 3 and sys.argv[2] == "-s":
+           item_list = sorted(item_list, key = lambda x:-x[2])
+        else:
+           item_list = sorted(item_list, key = lambda x:-x[1])
+
         for i in item_list:
-            print "{0:<20}{1:<10}{2:<10}{3}".format(i[0], int(i[1]), int(i[2]), i[3])
+            print "{0:<20}{1:<10}{2:<10}{3:<25}{4:<50}".format(i[0], int(i[1]), int(i[2]), i[4][:20], i[3])
+
 
     def _unreferenced_check(self):
         # Inspect unreferenced the item list 

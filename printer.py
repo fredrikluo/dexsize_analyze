@@ -57,7 +57,7 @@ class Dex_printer(object):
           return "String Id", str(self.idx)
 
       def _printStrData(self, i):
-          return "String data", i.get_data()[:50]
+          return "String:"+str(self.idx), i.get_data()[:50]
 
       def _printHeader(self, i):
           return "Header",""
@@ -66,13 +66,13 @@ class Dex_printer(object):
           return "Annotation",""
 
       def _printAnnSet(self, i):
-          return "Annotation set",""
+          return "AnnotationSet",""
 
       def _printAnnSetRef(self, i):
-          return "Annotation set ref",""
+          return "AnnotationSet ref",""
 
       def _printAnnDic(self, i):
-          return "Annotation directory",""
+          return "Annotation dir",""
 
       def _printMapList(self, i):
           return "Map list",""
@@ -83,20 +83,20 @@ class Dex_printer(object):
       def _printEncodedAry(self, i):
           return "Encoded array",""
 
-      def _printClassData(self, i):
-          return "Class data",""
+      #def _printClassData(self, i):
+      #    return "Class data",""
 
       def _printTypeId(self, i):
           return "Type id:"+ str(self.idx), i.get_descriptor_idx_value()
 
       def _printTypeItem(self, i):
-          return "Type item",""
+          return "Type item", i.get_string()
 
       def _printTypeList(self, i):
           return "Type list",""
 
       def _printProtoId(self, i):
-          return "Proto id:" + str(self.idx), "des:{0}({1})".format(i.shorty_idx_value, i.parameters_off_value)
+          return "Proto id:" + str(self.idx), "des:{0}{1}".format(i.shorty_idx_value, i.parameters_off_value)
 
       def _printFieldId(self, i):
           return "Field id:" + str(self.idx), i.get_class_name()+":"+i.get_name()
@@ -107,6 +107,6 @@ class Dex_printer(object):
       def _printClassDef(self, i):
           return "Class", i.get_name()[1:-1].replace("/", ".")
 
-      def _printDalvikCode(self, i):
-          return "Code",""
+#      def _printDalvikCode(self, i):
+ #         return "Method",""
 
