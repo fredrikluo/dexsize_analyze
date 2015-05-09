@@ -48,19 +48,20 @@ optional arguments:
 
 A sample output:
 ----------------
-
-Type                Cum.      Self      Content                                                     Class
-String:15041        50524     50524     f0VMRgEBAQAAAAAAAAAAAAMAKAABAAAA6A4AADQAAAAIkQAAAg          com.f.b.d.m
-String:12433        45174     45174     a&027qjf--nx?12oa08--nx?2eyh3la2ckx--nx?32wqq1--nx          com.b.b.a.a
-Method              22007     18804     e                                                           android.a.a.e
-String:15040        17668     17668     f0VMRgEBAQAAAAAAAAAAAAMAAwABAAAAkAYAADQAAADIMAAAAA          com.f.b.d.m
-Method              16665     7472      <clinit>                                                    com.opera.android.statistic.EventLogger$Name
-Encoded array       5262      5262                                                                  com.opera.android.R$string
-Encoded array       5252      5252                                                                  com.opera.android.R$id
-Encoded array       5112      5112                                                                  com.opera.android.R$drawable
-Method              3340      3335      <clinit>                                                    a.a.b.b.d
-Method              3373      3260      <clinit>                                                    com.c.a.a.x
-
+<table>
+tr><td>Type                </td><td>Cum.      </td><td>Self      </td><td>Content                                                     </td><td>Class</td></tr>
+<tr><td>String:15041        </td><td>50524     </td><td>50524     </td><td>f0VMRgEBAQAAAAAAAAAAAAMAKAABAAAA6A4AADQAAAAIkQAAAg          </td><td>com.f.b.d.m</td></tr>
+<tr><td>String:12433        </td><td>45174     </td><td>45174     </td><td>a&027qjf--nx?12oa08--nx?2eyh3la2ckx--nx?32wqq1--nx          </td><td>com.b.b.a.a</td></tr>
+<tr><td>Method              </td><td>22007     </td><td>18804     </td><td>e                                                           </td><td>android.a.a.e</td></tr>
+<tr><td>String:15040        </td><td>17668     </td><td>17668     </td><td>f0VMRgEBAQAAAAAAAAAAAAMAAwABAAAAkAYAADQAAADIMAAAAA          </td><td>com.f.b.d.m</td></tr>
+<tr><td>Method              </td><td>16665     </td><td>7472      </td><td><clinit>                                                    </td><td>com.opera.android.statistic.EventLogger$Name</td></tr>
+<tr><td>Encoded array       </td><td>5262      </td><td>5262      </td><td>                                                            </td><td>com.opera.android.R$string</td></tr>
+<tr><td>Encoded array       </td><td>5252      </td><td>5252      </td><td>                                                            </td><td>com.opera.android.R$id</td></tr>
+<tr><td>Encoded array       </td><td>5112      </td><td>5112      </td><td>                                                            </td><td>com.opera.android.R$drawable</td></tr>
+<tr><td>Method              </td><td>3340      </td><td>3335      </td><td><clinit>                                                    </td><td>a.a.b.b.d</td></tr>
+<tr><td>Method              </td><td>3373      </td><td>3260      </td><td><clinit>                                                    </td><td>com.c.a.a.x</td></tr>
+<tr><td>Method              </td><td>3747      </td><td>3232      </td><td>onDraw                                                      </td><td>com.opera.android.TabContainer</td></tr>
+</table>
 ...
 
 Very self explanatory.
