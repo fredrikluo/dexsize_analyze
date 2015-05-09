@@ -48,18 +48,16 @@ optional arguments:
 
 A sample output:
 ----------------
-<code>
-Type                Cum.      Self      Content         Class
-String:15041        50524     50524     f0VMRgEBAQA     com.f.b.d.m
-String:12433        45174     45174     a&027qjf--n     com.b.b.a.a
-Method              22007     18804     e               android.a.a.e
-String:15040        17668     17668     f0VMRgEBAQA     com.f.b.d.m
-Method              16665     7472      <clinit>        com.opera.android.statistic.EventLogger$Name
-Encoded array       5262      5262                      com.opera.android.R$string
-Encoded array       5252      5252                      com.opera.android.R$id
-Encoded array       5112      5112                      com.opera.android.R$drawable
-Method              3340      3335      <clinit>        a.a.b.b.d
-Method              3373      3260      <clinit>        com.c.a.a.x
+|Type|Cum.|Self|Content|Class|
+|----|----|----|-------|-----|
+|String:15041|50524|50524|f0VMRgEBAQ|com.f.b.d.m|
+|String:12433|45174|45174|a&027qjf--|com.b.b.a.a|
+|Method|22007|18804|e|android.a.a.e|
+|String:15040|17668|17668|f0VMRgEBAQ|com.f.b.d.m|
+|Method|16665|7472|<clinit>|com.opera.android.statistic.EventLogger$Name|
+|Encoded array|5262|5262||com.opera.android.R$string|
+|Encoded array|5252|5252||com.opera.android.R$id|
+|Encoded array|5112|5112||com.opera.android.R$drawable|
 </code>
 ...
 
