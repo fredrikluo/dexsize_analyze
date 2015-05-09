@@ -3,6 +3,7 @@
 import dvm
 import sys
 import printer 
+import argparse
 
 class DexTreeItem(object):
       def __init__(self, obj, size, parent = None, idx = 0):
@@ -33,15 +34,18 @@ class MapListItemAccessor(object):
           return []
 
 class Dex(object):
-    def __init__(self,filename, progon = True):
+    def __init__(self,filename, sort_by_self = False, quiet = False, list_report = False):
         if filename == None: 
             raise(Exception("Null File Name."))        
 
         self.filename = filename
-        self.progon = progon
+        self.progon = not quiet
+        self.list_report = list_report
+        self.sort_by_self = sort_by_self
 
     def _proginfo(self, str):
-        print str 
+        if self.progon:
+           print str
 
     def analyze(self):
         self._proginfo("Loading the dex file...")
@@ -238,7 +242,6 @@ class Dex(object):
             if int(i.obj.debug_info_off) > 0:
                self._connect_ref(i, debuginfos,  int(i.obj.debug_info_off))
 
-
             ins = i.obj.code.get_instructions()
             nb = 0
             for x in ins:
@@ -348,9 +351,11 @@ class Dex(object):
     def _build_refcount(self):
         # The start point is always classdefs
         classdefs = getattr(self, dvm.TYPE_MAP_ITEM[0x0006])
+
         def op(obj, i, o_o, p, ret):
              obj.ref_count += 1
              obj.class_node = o_o
+             global ins_count
              return ret
 
         for i in classdefs:
@@ -425,18 +430,21 @@ class Dex(object):
                for item in obj_set:
                    print_i(item, item_list)
 
-        fmt_str = "{0:<20}{1:<10}{2:<10}{3:<60}{4}"
- 
-        print "\033c"
-        print fmt_str.format("Type", "Cum.", "Self",  "Content", "Class")
-
-        if len(sys.argv) == 3 and sys.argv[2] == "-s":
-           item_list = sorted(item_list, key = lambda x:-x[2])
+        if self.list_report:
+            print "not implemented yet"
         else:
-           item_list = sorted(item_list, key = lambda x:-x[1])
+            fmt_str = "{0:<20}{1:<10}{2:<10}{3:<60}{4}"
+ 
+            print "\033c"
+            print fmt_str.format("Type", "Cum.", "Self",  "Content", "Class")
 
-        for i in item_list:
-            print fmt_str.format(i[0], int(i[1]), int(i[2]), i[4][:50], i[3])
+            if self.sort_by_self:
+               item_list = sorted(item_list, key = lambda x:-x[2])
+            else:
+               item_list = sorted(item_list, key = lambda x:-x[1])
+
+            for i in item_list:
+                print fmt_str.format(i[0], int(i[1]), int(i[2]), i[4][:50], i[3])
 
     def _unreferenced_check(self):
         # Inspect unreferenced the item list 
@@ -486,5 +494,12 @@ class Dex(object):
 
         print a_s
 
-dex = Dex(sys.argv[1])
+parser = argparse.ArgumentParser()
+parser.add_argument('dexfile', help='dex file to analyze.')
+parser.add_argument('-l', '--list-report', help='output a list report with item-id:size.', action="store_true")
+parser.add_argument('-s', '--sort-by-self', help='sort the result by self size.', action="store_true")
+parser.add_argument('-q', '--quiet', help='quiet mode, run without progress information.', action="store_true")
+args = parser.parse_args()
+
+dex = Dex(args.dexfile, args.sort_by_self, args.quiet, args.list_report)
 dex.analyze()
