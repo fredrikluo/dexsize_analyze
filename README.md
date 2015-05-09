@@ -1,4 +1,6 @@
 # Dex file binary foot print analyzing tool 
+Introduction:
+-------------
 
 Run this tool to profile binary foot print of all the items that comprise
 a .dex file (classes.dex in apk file).
@@ -7,7 +9,8 @@ It works like a performance profiler in many ways - it calculate both
 self and cumulative binary foot print of each item in dex file, including:
 class, method, string etc.
 
-* How size is calculated:
+How size is calculated:
+----------------------
 
 Cumulative size (Cum. size): Cumulative size of an object is the size of the
 object itself + the adjusted[1] size of all the objects which are referenced.
@@ -29,7 +32,10 @@ of string S is 3/2 = 1.5 bytes.
 
 In the report. All the values are rounded to integers.
 
-usage: dex.py [-h] [-l] [-s] [-q] dexfile
+Usage:
+------
+
+dex.py [-h] [-l] [-s] [-q] dexfile
 
 positional arguments:
   dexfile             dex file to analyze.
@@ -41,6 +47,7 @@ optional arguments:
   -q, --quiet         quiet mode, run without progress information.
 
 A sample output:
+----------------
 
 Type                Cum.      Self      Content                                                     Class
 String:15041        50524     50524     f0VMRgEBAQAAAAAAAAAAAAMAKAABAAAA6A4AADQAAAAIkQAAAg          com.f.b.d.m
