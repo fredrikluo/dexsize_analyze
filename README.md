@@ -54,7 +54,6 @@ A sample output:
 |String:12433|45174|45174|a&027qjf--|com.b.b.a.a|
 |Method|22007|18804|e|android.a.a.e|
 |String:15040|17668|17668|f0VMRgEBAQ|com.f.b.d.m|
-|Method|16665|7472|<clinit>|com.opera.android.statistic.EventLogger$Name|
 |Encoded array|5262|5262||com.opera.android.R$string|
 |Encoded array|5252|5252||com.opera.android.R$id|
 |Encoded array|5112|5112||com.opera.android.R$drawable|
