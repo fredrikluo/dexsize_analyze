@@ -48,19 +48,19 @@ optional arguments:
 
 A sample output:
 ----------------
-
-Type                Cum.      Self      Content                                                     Class
-String:15041        50524     50524     f0VMRgEBAQAAAAAAAAAAAAMAKAABAAAA6A4AADQAAAAIkQAAAg          com.f.b.d.m
-String:12433        45174     45174     a&027qjf--nx?12oa08--nx?2eyh3la2ckx--nx?32wqq1--nx          com.b.b.a.a
-Method              22007     18804     e                                                           android.a.a.e
-String:15040        17668     17668     f0VMRgEBAQAAAAAAAAAAAAMAAwABAAAAkAYAADQAAADIMAAAAA          com.f.b.d.m
-Method              16665     7472      <clinit>                                                    com.opera.android.statistic.EventLogger$Name
-Encoded array       5262      5262                                                                  com.opera.android.R$string
-Encoded array       5252      5252                                                                  com.opera.android.R$id
-Encoded array       5112      5112                                                                  com.opera.android.R$drawable
-Method              3340      3335      <clinit>                                                    a.a.b.b.d
-Method              3373      3260      <clinit>                                                    com.c.a.a.x
-
+<code>
+Type                Cum.      Self      Content         Class
+String:15041        50524     50524     f0VMRgEBAQA     com.f.b.d.m
+String:12433        45174     45174     a&027qjf--n     com.b.b.a.a
+Method              22007     18804     e               android.a.a.e
+String:15040        17668     17668     f0VMRgEBAQA     com.f.b.d.m
+Method              16665     7472      <clinit>        com.opera.android.statistic.EventLogger$Name
+Encoded array       5262      5262                      com.opera.android.R$string
+Encoded array       5252      5252                      com.opera.android.R$id
+Encoded array       5112      5112                      com.opera.android.R$drawable
+Method              3340      3335      <clinit>        a.a.b.b.d
+Method              3373      3260      <clinit>        com.c.a.a.x
+</code>
 ...
 
 Very self explanatory.
