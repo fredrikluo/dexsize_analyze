@@ -48,8 +48,8 @@ optional arguments:
 
 A sample output:
 ----------------
-<table style="border:0">
-<tr><td>Type                </td><td>Cum.      </td><td>Self      </td><td>Content                                                     </td><td>Class</td></tr>
+<table>
+tr><td>Type                </td><td>Cum.      </td><td>Self      </td><td>Content                                                     </td><td>Class</td></tr>
 <tr><td>String:15041        </td><td>50524     </td><td>50524     </td><td>f0VMRgEBAQAAAAAAAAAAAAMAKAABAAAA6A4AADQAAAAIkQAAAg          </td><td>com.f.b.d.m</td></tr>
 <tr><td>String:12433        </td><td>45174     </td><td>45174     </td><td>a&027qjf--nx?12oa08--nx?2eyh3la2ckx--nx?32wqq1--nx          </td><td>com.b.b.a.a</td></tr>
 <tr><td>Method              </td><td>22007     </td><td>18804     </td><td>e                                                           </td><td>android.a.a.e</td></tr>
