@@ -307,7 +307,7 @@ class Dex(object):
             ls = i.obj.list
             for idx in range(0, i.obj.size):
                 self._connect_ref(i, annsetitems,
-                                  ls[i.obj.annotations_off])
+                                  ls[idx].annotations_off)
 
         encodearraryitems = getattr(self, dvm.TYPE_MAP_ITEM[0x2005])
 
@@ -423,12 +423,17 @@ class Dex(object):
                 self._connect_ref(i, annsetitems,
                                   i.obj.class_annotations_off)
 
-            def connect_ref_ann(size, target, obj, idx, field_name):
+            def connect_ref_ann(size, target, obj, idx, field_name,
+                                ref_list = False):
                 for idx in range(0, size):
                     self._connect_ref(i, target, getattr(obj[idx],
                                       field_name))
-                    self._connect_ref(i, annsetitems,
-                                      obj[idx].annotations_off)
+                    if ref_list:
+                        self._connect_ref(i, ann_ref_sets,
+                                          obj[idx].annotations_off)
+                    else:
+                        self._connect_ref(i, annsetitems,
+                                          obj[idx].annotations_off)
 
             connect_ref_ann(i.obj.annotated_fields_size, fieldids,
                             i.obj.field_annotations, idx, 'field_idx')
@@ -436,7 +441,7 @@ class Dex(object):
                             i.obj.method_annotations, idx, 'method_idx')
             connect_ref_ann(i.obj.annotated_parameters_size, methodids,
                             i.obj.parameter_annotations, idx,
-                            'method_idx')
+                            'method_idx', True)
 
         # classdefs
 
@@ -504,7 +509,7 @@ class Dex(object):
             if isinstance(item.obj, dvm.ClassDefItem):
                 sum_up(item)
                 (col1, col2) = p.Print(item.obj)
-                item_list.append([col1, item.cum, item.size, col2, ''])
+                item_list.append([col1, item.cum, item.size, col2, col2])
 
                 for i in item.child:
                     if isinstance(i.obj, dvm.ClassDataItem):
@@ -562,22 +567,22 @@ class Dex(object):
                     print_i(item, item_list)
 
         if self.list_report:
-            print 'not implemented yet'
+             fmt_str = '{0},{1},{2},{3},{4}'
         else:
-            fmt_str = '{0:<20}{1:<10}{2:<10}{3:<60}{4}'
+           fmt_str = '{0:<20}{1:<10}{2:<30}{3:<60}{4}'
+ 
+        print "\033c"
+        print fmt_str.format('Type', 'Cum.', 'Self', 'Content',
+                                  'Class')
 
-            print "\033c"
-            print fmt_str.format('Type', 'Cum.', 'Self', 'Content',
-                                 'Class')
+        if self.sort_by_self:
+            item_list = sorted(item_list, key=lambda x: -x[2])
+        else:
+            item_list = sorted(item_list, key=lambda x: -x[1])
 
-            if self.sort_by_self:
-                item_list = sorted(item_list, key=lambda x: -x[2])
-            else:
-                item_list = sorted(item_list, key=lambda x: -x[1])
-
-            for i in item_list:
-                print fmt_str.format(i[0], int(i[1]),
-                                     int(i[2]), (i[4])[:50], i[3])
+        for i in item_list:
+            print fmt_str.format(i[0], int(i[1]),
+                                int(i[2]), (i[4])[:50], i[3])
 
     def _unreferenced_check(self):
 
