@@ -48,6 +48,8 @@ class Dex_printer(object):
             _str = self._printTypeList(i)
          elif isinstance(i, dvm.MapList):
             _str = self._printMapList(i)
+         elif isinstance(i, dvm.AnnotationSetRefList):
+            _str = self._printAnnotationSetRefList(i)
          else:
             assert(not "bug bug")
 
@@ -73,6 +75,9 @@ class Dex_printer(object):
 
       def _printAnnDic(self, i):
           return "Annotation dir",""
+
+      def _printAnnotationSetRefList(self, i):
+          return "AnnotationSet reflist",""
 
       def _printMapList(self, i):
           return "Map list",""
