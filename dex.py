@@ -43,7 +43,7 @@ class MapListItemAccessor(object):
 class Dex(object):
 
     def __init__(self, filename, sort_by_self=False, quiet=False,
-                 list_report=False, proguard_mapfile= None):
+                 list_report=False, proguard_mapfile=None):
         if filename is None:
             raise Exception('Null File Name.')
 
@@ -429,7 +429,7 @@ class Dex(object):
                                   i.obj.class_annotations_off)
 
             def connect_ref_ann(size, target, obj, idx, field_name,
-                                ref_list = False):
+                                ref_list=False):
                 for idx in range(0, size):
                     self._connect_ref(i, target, getattr(obj[idx],
                                       field_name))
@@ -514,12 +514,12 @@ class Dex(object):
 
         def get_method_sig(dm):
             info = dm.get_information()
-            name=dm.get_name()
+            name = dm.get_name()
 
-            if info.has_key('params'):
-                params=info['params']
+            if 'params' in info:
+                params = info['params']
                 for p in params:
-                    name=name+"_"+p[1]
+                    name = name+"_"+p[1]
 
             return name
 
@@ -536,10 +536,12 @@ class Dex(object):
                     if isinstance(i.obj, dvm.ClassDataItem):
                         code_dic = {}
                         for dm in i.obj.get_direct_methods():
-                            code_dic[dm.get_code_off()] = col2+"_"+get_method_sig(dm)
+                            code_dic[dm.get_code_off()] = \
+                                           col2+"_"+get_method_sig(dm)
 
                         for dm in i.obj.get_virtual_methods():
-                            code_dic[dm.get_code_off()] = col2+"_"+get_method_sig(dm)
+                            code_dic[dm.get_code_off()] = \
+                                          col2+"_"+get_method_sig(dm)
 
                         for x in i.child:
                             # Find all the methods
@@ -590,13 +592,13 @@ class Dex(object):
                     print_i(item, item_list)
 
         if self.list_report:
-           fmt_str = '{0},{1},{2},{3},{4}'
+            fmt_str = '{0},{1},{2},{3},{4}'
         else:
-           fmt_str = '{0:<20}{1:<10}{2:<10}{3:<100}{4}'
+            fmt_str = '{0:<20}{1:<10}{2:<10}{3:<100}{4}'
 
         print "\033c"
         print fmt_str.format('Type', 'Cum.', 'Self', 'Content',
-                                  'Class')
+                             'Class')
 
         if self.sort_by_self:
             item_list = sorted(item_list, key=lambda x: -x[2])
@@ -605,7 +607,7 @@ class Dex(object):
 
         for i in item_list:
             print fmt_str.format(i[0], int(i[1]),
-                                int(i[2]), (i[4])[:95], i[3])
+                                 int(i[2]), (i[4])[:95], i[3])
 
     def _unreferenced_check(self):
 
@@ -664,8 +666,9 @@ class Dex(object):
 
 parser = argparse.ArgumentParser()
 parser.add_argument('dexfile', help='dex file to analyze.')
-parser.add_argument('-m', '--map-proguard', help='map file to translate the symbol.',
-                    type = str)
+parser.add_argument('-m', '--map-proguard',
+                    help='map file to translate the symbol.',
+                    type=str)
 parser.add_argument('-l', '--list-report',
                     help='output a list report with item-id:size.',
                     action='store_true')
@@ -678,5 +681,6 @@ parser.add_argument('-q', '--quiet',
                     action='store_true')
 args = parser.parse_args()
 
-dex = Dex(args.dexfile, args.sort_by_self, args.quiet, args.list_report, args.map_proguard)
+dex = Dex(args.dexfile, args.sort_by_self, args.quiet, args.list_report,
+          args.map_proguard)
 dex.analyze()
