@@ -1,8 +1,10 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-import dvm
 import sys
+import os
+
+import dvm
 import printer
 import argparse
 import proguard_demngl
@@ -43,18 +45,24 @@ class MapListItemAccessor(object):
 class Dex(object):
 
     def __init__(self, filename, sort_by_self=False, quiet=False,
-                 list_report=False, proguard_mapfile=None):
+                 list_report=False, proguard_mapfile=None,
+                 size_stats=False, debug=False):
         if filename is None:
             raise Exception('Null File Name.')
 
         self.filename = filename
+        self.filesize = os.path.getsize(filename)
         self.progon = not quiet
         self.list_report = list_report
         self.sort_by_self = sort_by_self
+        self.debug = debug
+        self.size_stats = size_stats
 
         if proguard_mapfile:
             self.sym_translator = \
                 proguard_demngl.ProgardDemangle(proguard_mapfile)
+        else:
+            self.sym_translator = None
 
     def _proginfo(self, str):
         if self.progon:
@@ -90,11 +98,13 @@ class Dex(object):
         self._proginfo('Generating statistics...')
         self._output_statistics()
 
-        # Sanity test
-        # self._unreferenced_check()
+        if self.size_stats:
+            # Inspect map
+            self._size_stats()
 
-        # Inspect map
-        # self._inspect_map()
+        if self.debug:
+            # Sanity test
+            self._unreferenced_check()
 
     def _build_map(self):
         for k in dvm.TYPE_MAP_ITEM.keys():
@@ -537,7 +547,7 @@ class Dex(object):
                         code_dic = {}
                         for dm in i.obj.get_direct_methods():
                             code_dic[dm.get_code_off()] = \
-                                           col2+"_"+get_method_sig(dm)
+                                          col2+"_"+get_method_sig(dm)
 
                         for dm in i.obj.get_virtual_methods():
                             code_dic[dm.get_code_off()] = \
@@ -613,6 +623,8 @@ class Dex(object):
 
         # Inspect unreferenced the item list
 
+        print 'Unreferenced Object:'
+
         for k in dvm.TYPE_MAP_ITEM.keys():
             name = dvm.TYPE_MAP_ITEM[k]
 
@@ -635,33 +647,34 @@ class Dex(object):
             else:
                 for i in getattr(self, name):
                     if i.ref_count == 0:
-                        print '---Unreferenced Object ---'
                         print i.obj, i.obj.offset
                         found = True
                         i.obj.show()
 
-            # assert(not found and "BUG! must have no unreferenced item")
-
-    def _inspect_map(self):
-        a_s = 0
+    def _size_stats(self):
 
         # Inspect the item list
+        print "----------------------"
+        print "Size stats (in bytes):"
+        a_s = 0
 
         for k in dvm.TYPE_MAP_ITEM.keys():
             name = dvm.TYPE_MAP_ITEM[k]
             s = 0
+            fmt = "    {0:<30}{1}"
             if k >= 0x1000:
                 for kt in getattr(self, name).keys():
                     s += getattr(self, name)[kt].size
-                print name, s
+                print fmt.format(name[5:], s)
             else:
                 for i in getattr(self, name):
                     s += i.size
-                print name, s
+                print fmt.format(name[5:], s)
 
             a_s += s
 
-        print a_s
+        print "Total size:", a_s
+        print "File size:", self.filesize
 
 
 parser = argparse.ArgumentParser()
@@ -669,8 +682,14 @@ parser.add_argument('dexfile', help='dex file to analyze.')
 parser.add_argument('-m', '--map-proguard',
                     help='map file to translate the symbol.',
                     type=str)
+parser.add_argument('-st', '--size_stats',
+                    help='statistics about all the items.',
+                    action='store_true')
+parser.add_argument('-d', '--debug',
+                    help='debug infoi.',
+                    action='store_true')
 parser.add_argument('-l', '--list-report',
-                    help='output a list report with item-id:size.',
+                    help='output a list report in csv format.',
                     action='store_true')
 parser.add_argument('-s', '--sort-by-self',
                     help='sort the result by self size.',
@@ -682,5 +701,5 @@ parser.add_argument('-q', '--quiet',
 args = parser.parse_args()
 
 dex = Dex(args.dexfile, args.sort_by_self, args.quiet, args.list_report,
-          args.map_proguard)
+          args.map_proguard, args.size_stats, args.debug)
 dex.analyze()

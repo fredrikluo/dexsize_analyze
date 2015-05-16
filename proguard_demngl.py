@@ -2,19 +2,9 @@
 # -*- coding: utf-8 -*-
 import sys
 
-
-class DexSymbolsList(object):
-
-    def __init__(self, name):
-        self.name = name
-        self.symbols = {}
-
-
 class ProgardDemangle(object):
 
     def __init__(self, mapfile):
-        self.type_list = {}
-        self.type_rlist = {}
         self.symbol_list = {}
 
         if mapfile:
@@ -24,12 +14,14 @@ class ProgardDemangle(object):
     def _loadData(self, fl):
 
         # build type list
+        type_list = {}
+        type_rlist = {}
 
         for l in fl:
             if not l.startswith(' '):
                 (org_name, mangled_name) = self._getMapping(l)
-                self.type_list[mangled_name] = org_name
-                self.type_rlist[org_name] = mangled_name
+                type_list[mangled_name] = org_name
+                type_rlist[org_name] = mangled_name
 
         # build signature map
 
@@ -42,8 +34,8 @@ class ProgardDemangle(object):
                 sig = self._get_sig(l)
                 self.symbol_list[class_name + '_' + sig] = org_name
 
-        for k in self.type_list.keys():
-            self.symbol_list[k] = self.type_list[k]
+        for k in type_list.keys():
+            self.symbol_list[k] = type_list[k]
 
     def _get_sig(self, l):
         (org_name, mangled_name) = self._getMapping(l)
