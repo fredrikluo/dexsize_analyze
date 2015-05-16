@@ -57,6 +57,7 @@ class Dex(object):
         self.sort_by_self = sort_by_self
         self.debug = debug
         self.size_stats = size_stats
+        self.class_size = 0
 
         if proguard_mapfile:
             self.sym_translator = \
@@ -535,9 +536,11 @@ class Dex(object):
 
         def print_i(item, item_list):
             p = printer.Dex_printer()
+            class_size = 0
 
             if isinstance(item.obj, dvm.ClassDefItem):
                 sum_up(item)
+                class_size = item.cum
                 (col1, col2) = p.Print(item.obj)
                 cn = get_symbol(col2)
                 item_list.append([col1, item.cum, item.size, cn, cn])
@@ -588,6 +591,8 @@ class Dex(object):
                 item_list.append([col1, item.cum, item.size,
                                  get_symbol(class_name), col2])
 
+            return class_size
+
         item_list = []
 
         for k in dvm.TYPE_MAP_ITEM.keys():
@@ -596,10 +601,11 @@ class Dex(object):
             if k >= 0x1000:
                 for ok in obj_set.keys():
                     item = obj_set[ok]
-                    print_i(item, item_list)
+                    self.class_size += print_i(item, item_list)
             else:
                 for item in obj_set:
-                    print_i(item, item_list)
+                    self.class_size += print_i(item, item_list)
+
 
         if self.list_report:
             fmt_str = '{0},{1},{2},{3},{4}'
@@ -657,6 +663,7 @@ class Dex(object):
         print "----------------------"
         print "Size stats (in bytes):"
         a_s = 0
+        size_beside_class = 0
 
         for k in dvm.TYPE_MAP_ITEM.keys():
             name = dvm.TYPE_MAP_ITEM[k]
@@ -671,11 +678,15 @@ class Dex(object):
                     s += i.size
                 print fmt.format(name[5:], s)
 
+            if k == 0 or k == 0x1000:
+                size_beside_class += s
+
             a_s += s
 
+        print "Sum of all self size:", int(self.class_size +
+                                           size_beside_class)
         print "Total size:", a_s
         print "File size:", self.filesize
-
 
 parser = argparse.ArgumentParser()
 parser.add_argument('dexfile', help='dex file to analyze.')
