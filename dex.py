@@ -3,11 +3,11 @@
 
 import sys
 import os
-
-import dvm
-import printer
 import argparse
-import proguard_demngl
+
+import lib.dvm as dvm
+import lib.printer as printer
+import lib.proguard_demngl as proguard_demngl
 
 
 class DexTreeItem(object):
