@@ -2,10 +2,12 @@
 # -*- coding: utf-8 -*-
 import sys
 
+
 class ProgardDemangle(object):
 
     def __init__(self, mapfile):
         self.symbol_list = {}
+        self.type_rlist = {}
 
         if mapfile:
             fl = open(mapfile).readlines()
@@ -15,13 +17,12 @@ class ProgardDemangle(object):
 
         # build type list
         type_list = {}
-        type_rlist = {}
 
         for l in fl:
             if not l.startswith(' '):
                 (org_name, mangled_name) = self._getMapping(l)
                 type_list[mangled_name] = org_name
-                type_rlist[org_name] = mangled_name
+                self.type_rlist[org_name] = mangled_name
 
         # build signature map
 
@@ -104,10 +105,13 @@ class ProgardDemangle(object):
 
         fl = [
             'android.support.v4.app.ActivityCompatHoneycomb -> a:\n',
-            '   android.support.v4.app.ActivityCompatHoneycomb next$fe619d5 -> a\n',
-            '   36:39:android.os.Parcelable$Creator newCreator(android.support.v4.os.ParcelableCompatCreatorCallbacks) -> a\n',
+            '   android.support.v4.app.ActivityCompatHoneycomb'
+            ' next$fe619d5 -> a\n',
+            '   36:39:android.os.Parcelable$Creator newCreator'
+            '(android.support.v4.os.ParcelableCompatCreatorCallbacks) -> a\n',
             '   106:120:java.util.Map loadSearchHotWordItems() -> b\n',
-            '   254:255:java.lang.Object getField(java.lang.Object,java.lang.String,java.lang.Object) -> a\n',
+            '   254:255:java.lang.Object getField(java.lang.Object,'
+            'java.lang.String,java.lang.Object) -> a\n',
             'com.opera.android.statistic.EventLogger$Name -> ckm:\n',
             'android.support.v4.os.ParcelableCompatCreatorCallbacks -> c\n',
             ]
@@ -116,11 +120,14 @@ class ProgardDemangle(object):
         test_verify(self.getSymbol('a'),
                     'android.support.v4.app.ActivityCompatHoneycomb')
         test_verify(self.getSymbol('a_a_c'),
-                    'android.os.Parcelable$Creator newCreator(android.support.v4.os.ParcelableCompatCreatorCallbacks)')
+                    'android.os.Parcelable$Creator newCreator'
+                    '(android.support.v4.os.ParcelableCompatCreatorCallbacks)')
         test_verify(self.getSymbol('a_b'),
                     'java.util.Map loadSearchHotWordItems()')
-        test_verify(self.getSymbol('a_a_java.lang.Object_java.lang.String_java.lang.Object'),
-                    'java.lang.Object getField(java.lang.Object,java.lang.String,java.lang.Object)')
+        test_verify(self.getSymbol('a_a_java.lang.Object_java.'
+                                   'lang.String_java.lang.Object'),
+                    'java.lang.Object getField'
+                    '(java.lang.Object,java.lang.String,java.lang.Object)')
         print '# Dump the symbol list:'
         print self.symbol_list
 
@@ -128,5 +135,3 @@ class ProgardDemangle(object):
 if __name__ == '__main__':
     d = ProgardDemangle(None)
     d.test()
-
-

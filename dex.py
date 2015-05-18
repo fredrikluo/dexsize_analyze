@@ -97,11 +97,11 @@ class Dex(object):
         # Output statistics
 
         self._proginfo('Generating statistics...')
-        self._output_statistics()
 
-        if self.size_stats:
-            # Inspect map
-            self._size_stats()
+        # Clear the screen
+        print "\033c"
+
+        self._output_statistics()
 
         if self.debug:
             # Sanity test
@@ -606,13 +606,15 @@ class Dex(object):
                 for item in obj_set:
                     self.class_size += print_i(item, item_list)
 
+        if self.size_stats:
+            self._size_stats()
+            print ""
 
         if self.list_report:
             fmt_str = '{0},{1},{2},{3},{4}'
         else:
             fmt_str = '{0:<20}{1:<10}{2:<10}{3:<100}{4}'
 
-        print "\033c"
         print fmt_str.format('Type', 'Cum.', 'Self', 'Content',
                              'Class')
 
@@ -661,7 +663,7 @@ class Dex(object):
 
         # Inspect the item list
         print "----------------------"
-        print "Size stats (in bytes):"
+        print "Size stats (in bytes):\n"
         a_s = 0
         size_beside_class = 0
 
@@ -683,8 +685,8 @@ class Dex(object):
 
             a_s += s
 
-        print "Sum of all self size:", int(self.class_size +
-                                           size_beside_class)
+        print "\nSum of all self size:", int(self.class_size +
+                                             size_beside_class)
         print "Total size:", a_s
         print "File size:", self.filesize
 
