@@ -699,7 +699,7 @@ parser.add_argument('-st', '--size_stats',
                     help='statistics about all the items.',
                     action='store_true')
 parser.add_argument('-d', '--debug',
-                    help='debug infoi.',
+                    help='debug information.',
                     action='store_true')
 parser.add_argument('-l', '--list-report',
                     help='output a list report in csv format.',
