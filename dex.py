@@ -162,7 +162,7 @@ class Dex(object):
     def _connect_encoded_annotation(self, i, obj, stringids, typeids,
                                     fieldids, methodids):
         self._connect_ref(i, typeids, int(obj.type_idx))
-        for idx in range(0, int(obj.size)):
+        for idx in xrange(0, int(obj.size)):
             self._connect_ref(i, stringids,
                               int(obj.elements[idx].name_idx))
             self._connect_encoded_value(
@@ -264,7 +264,7 @@ class Dex(object):
 
         for k in typelists.keys():
             i = typelists[k]
-            for idx in range(0, i.obj.size):
+            for idx in xrange(0, i.obj.size):
                 self._connect_ref(i, typeids, i.obj.list[idx].type_idx)
 
         # proto_id
@@ -308,7 +308,7 @@ class Dex(object):
         for k in annsetitems.keys():
             i = annsetitems[k]
             entries = i.obj.annotation_off_item
-            for idx in range(0, i.obj.size):
+            for idx in xrange(0, i.obj.size):
                 self._connect_ref(i, annitems,
                                   entries[idx].annotation_off)
 
@@ -321,7 +321,7 @@ class Dex(object):
         for k in ann_ref_sets.keys():
             i = ann_ref_sets[k]
             ls = i.obj.list
-            for idx in range(0, i.obj.size):
+            for idx in xrange(0, i.obj.size):
                 self._connect_ref(i, annsetitems,
                                   ls[idx].annotations_off)
 
@@ -402,12 +402,12 @@ class Dex(object):
             i = classdatas[k]
 
             def connect_ref_f(size, obj, idx):
-                for idx in range(0, size):
+                for idx in xrange(0, size):
                     self._connect_ref(i, fieldids,
                                       int(obj[idx].field_idx))
 
             def connect_ref_m(size, obj, idx):
-                for idx in range(0, size):
+                for idx in xrange(0, size):
                     self._connect_ref(i, methodids,
                                       int(obj[idx].method_idx))
                     if int(obj[idx].code_off) != 0:
@@ -441,7 +441,7 @@ class Dex(object):
 
             def connect_ref_ann(size, target, obj, idx, field_name,
                                 ref_list=False):
-                for idx in range(0, size):
+                for idx in xrange(0, size):
                     self._connect_ref(i, target, getattr(obj[idx],
                                       field_name))
                     if ref_list:
