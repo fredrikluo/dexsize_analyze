@@ -11,6 +11,7 @@ It calculates "cumluative binary size" and also the "self binary size" of a item
 
 How size is calculated:
 ----------------------
+
 * #### Cumulative size (Cum.):
 Cumulative size of an object is the size of the object itself plus **"adjusted size"** of all the objects it referers.
 * #### Self size:
