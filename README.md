@@ -12,12 +12,12 @@ It calculates "cumluative binary size" and also the "self binary size" of a item
 How size is calculated:
 ----------------------
 
-* #### Cumulative size:
+* **Cumulative size:**  
 Cumulative size of an object is the size of the object itself plus **"adjusted size"** of all the objects it referers.
 * #### Self size:
 The "size" of the object itself. 
 
-* #### Adjusted size:
+* **Adjusted size:**
 As mentioned in the "cum size" seciton, the "cum size" is not calculated by summing up the "self size" of all the referenced objects. It rather sums up the **"adjusted size"** which is defined as **(size of the object / the reference count of the object)**.  
 The rationale behind this is that in a dex file, an objects could be referenced by many
 objects. If we add the size of the object up to the cum. size of all the objects that reference it, these cum size would look very misguiding.  
