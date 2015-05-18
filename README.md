@@ -14,7 +14,7 @@ How size is calculated:
 
 * **Cumulative size:**  
 Cumulative size of an object is the size of the object itself plus **"adjusted size"** of all the objects it referers.
-* #### Self size:
+* **Self size:**
 The "size" of the object itself. 
 
 * **Adjusted size:**
