@@ -634,7 +634,7 @@ class Dex(object):
                 top_class_size.append((k, sum_dic[k]))
 
             total_size = 0
-            for i in sorted(top_class_size, key = lambda x:x[0]):
+            for i in sorted(top_class_size, key=lambda x: x[0]):
                 print "{0:<70} {1:<10}".format(i[0], i[1])
                 total_size += i[1]
 
