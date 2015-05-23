@@ -4,6 +4,7 @@
 import sys
 import os
 import argparse
+import re
 
 import lib.dvm as dvm
 import lib.printer as printer
@@ -46,7 +47,7 @@ class Dex(object):
 
     def __init__(self, filename, sort_by_self=False, quiet=False,
                  list_report=False, proguard_mapfile=None,
-                 size_stats=False, debug=False):
+                 size_stats=False, debug=False, class_only=False):
         if filename is None:
             raise Exception('Null File Name.')
 
@@ -57,6 +58,7 @@ class Dex(object):
         self.sort_by_self = sort_by_self
         self.debug = debug
         self.size_stats = size_stats
+        self.class_only = class_only
         self.class_size = 0
 
         if proguard_mapfile:
@@ -610,6 +612,35 @@ class Dex(object):
             self._size_stats()
             print ""
 
+        if self.class_only:
+            name = dvm.TYPE_MAP_ITEM[0x0006]
+            obj_set = getattr(self, name)
+            p = printer.Dex_printer()
+
+            sum_dic = {}
+            for i in obj_set:
+                sum_up(i)
+                (col1, col2) = p.Print(i.obj)
+                class_size = int(round(i.cum))
+                cn = get_symbol(col2)
+                key = ".".join(re.split("\.|\$", cn)[:4])
+                if key in sum_dic:
+                    sum_dic[key] += class_size
+                else:
+                    sum_dic[key] = class_size
+
+            top_class_size = []
+            for k in sum_dic.keys():
+                top_class_size.append((k, sum_dic[k]))
+
+            total_size = 0
+            for i in sorted(top_class_size, key = lambda x:x[0]):
+                print "{0:<70} {1:<10}".format(i[0], i[1])
+                total_size += i[1]
+
+            print "Total size:", total_size
+            return
+
         if self.list_report:
             fmt_str = '{0},{1},{2},{3},{4}'
         else:
@@ -711,8 +742,12 @@ parser.add_argument('-q', '--quiet',
                     help='quiet mode, run without progress\
                           information.',
                     action='store_true')
+parser.add_argument('-c', '--class-only',
+                    help='only display sizes of the classes\
+                          in the dex file.',
+                    action='store_true')
 args = parser.parse_args()
 
 dex = Dex(args.dexfile, args.sort_by_self, args.quiet, args.list_report,
-          args.map_proguard, args.size_stats, args.debug)
+          args.map_proguard, args.size_stats, args.debug, args.class_only)
 dex.analyze()
