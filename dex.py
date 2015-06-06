@@ -100,8 +100,9 @@ class Dex(object):
 
         self._proginfo('Generating statistics...')
 
-        # Clear the screen
-        print "\033c"
+        if sys.stdout.isatty():
+            # Clear the screen
+            print "\033c"
 
         self._output_statistics()
 
@@ -642,7 +643,7 @@ class Dex(object):
             return
 
         if self.list_report:
-            fmt_str = '{0},{1},{2},{3},{4}'
+            fmt_str = '"{0}","{1}","{2}","{3}","{4}"'
         else:
             fmt_str = '{0:<20}{1:<10}{2:<10}{3:<100}{4}'
 
