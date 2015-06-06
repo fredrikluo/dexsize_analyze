@@ -100,8 +100,9 @@ class Dex(object):
 
         self._proginfo('Generating statistics...')
 
-        # Clear the screen
-        print "\033c"
+        if sys.stdout.isatty():
+            # Clear the screen
+            print "\033c"
 
         self._output_statistics()
 
