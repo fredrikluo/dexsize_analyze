@@ -643,7 +643,7 @@ class Dex(object):
             return
 
         if self.list_report:
-            fmt_str = '{0},{1},{2},{3},{4}'
+            fmt_str = '"{0}","{1}","{2}","{3}","{4}"'
         else:
             fmt_str = '{0:<20}{1:<10}{2:<10}{3:<100}{4}'
 
