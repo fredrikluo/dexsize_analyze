@@ -5,28 +5,43 @@ This tool is made to analyze binary foot print of a dex file (the classes.dex in
 
 It works very much like a regular performance profiler.  
 
-It calculates "cumluative binary size" and also the "self binary size" of a item [1] in a dex file to give you detailed information about how the binary foot print of a dex file is composed.  
+It calculates "cumluative binary size" and "self binary size" of every object [1] of a dex file to give you detailed information about how much the binary foot print it takes.  
 
-(More information about how  "cumluative binary size" and "self binary size" are calculated will be explained in the following sections.)
+(More information about how  "cumluative binary size" and "self binary size" are calculated is explained in the following sections.)
 
-[1] An Item in a dex file includes class, method, string etc.
+[1] An object in a dex file includes class, method, string etc, see here:
+  https://source.android.com/devices/tech/dalvik/dex-format.html
+
+in section "Type Codes"
 
 How size is calculated:
 ----------------------
 
 * **Cumulative size:**  
-Cumulative size of an object is the size of the object itself plus **"adjusted size"** of all the objects it referers.
+Cumulative size of an object is defined as the size of the object itself plus **"adjusted size"** of all the objects it references.
+
 * **Self size:**  
 The "size" of the object itself. 
 
 * **Adjusted size:**  
-As mentioned in the "cum size" seciton, the "cum size" is not calculated by summing up the "self size" of all the referenced objects. It rather sums up the **"adjusted size"** which is defined as **(size of the object / the reference count of the object)**.  
+As mentioned in the "cum size" seciton, the "cum size" is not calculated by summing up the "size" of all the referenced objects. It rather sums up the **"adjusted size"** which is defined as **(size of the object / the reference count of the object)**.  
 
-The rationale is that in a dex file, an objects could be referenced by many objects. If we add the size of the object up to the cum. size of all the objects that reference it, these cum size would look very misguiding. 
+The rationale is that the cum size of all the items of a dex file should add up to the size of the dex file in order to reflect how much binary space each item occupies. However in reality one object could be referenced by many objects, If we add the size of the object to every cum size of the objects that reference it, the cum size will not add up to the size of a dex file, because obviously these objects which have more than one reference would be counted multiple times. 
+
+Therefore, we use adjusted size as mentioned above, to make sure the cum size of every item is fairly calculated.
  
-For example, there are 5 objects referencing a resource string which is 5k bytes in binary foot print.  If you take raw foot print of resource string , cum size of each of the 5 referencing objects will be a least 5k bytes, and it's not really what happened. It's better to say,  every object in this 5 objects shares the resouce string, hence only take 1/5 of the resource stirng's foot print. Therefore, let's say the adjusted size of a this resource string is 1/5 * 5K = 1K.  
-
 In the report, all the values are rounded to integers.
+
+FAQ:
+------
+
+According to https://www.python.org/dev/peps/pep-0394/, we use python2 as the name of python 2.x intepretor. Therefore if you see error like this:   
+
+	env: python2: No such file or directory
+
+The solution is here:   
+
+	sudo ln -s /usr/bin/python2.7 /usr/bin/python2
 
 Usage:
 ------
