@@ -682,38 +682,38 @@ class Dex(object):
         print "Total size:", a_s
         print "File size:", self.filesize
 
+
 def dex_analyze():
     # Start of the main function.
     parser = argparse.ArgumentParser()
     parser.add_argument('dexfile', help='dex file to analyze.')
     parser.add_argument('-m', '--map-proguard',
-        help='map file to translate the symbol.',
-        type=str)
+                        help='map file to translate the symbol.',
+                        type=str)
     parser.add_argument('-st', '--size_stats',
-        help='statistics about all the items.',
-        action='store_true')
+                        help='statistics about all the items.',
+                        action='store_true')
     parser.add_argument('-d', '--debug',
-        help='debug information.',
-        action='store_true')
+                        help='debug information.',
+                        action='store_true')
     parser.add_argument('-l', '--list-report',
-        help='output a list report in csv format.',
-        action='store_true')
+                        help='output a list report in csv format.',
+                        action='store_true')
     parser.add_argument('-s', '--sort-by-self',
-        help='sort the result by self size.',
-        action='store_true')
+                        help='sort the result by self size.',
+                        action='store_true')
     parser.add_argument('-q', '--quiet',
-        help='quiet mode, run without progress\
-                information.',
-                action='store_true')
+                        help='quiet mode, run without progress\
+                            information.',
+                        action='store_true')
     parser.add_argument('-c', '--class-only',
-        help='only display sizes of the classes\
-                in the dex file.',
-                action='store_true')
+                        help='only display sizes of the classes\
+                            in the dex file.',
+                        action='store_true')
 
     args = parser.parse_args()
-
     dex = Dex(args.dexfile, args.sort_by_self, args.quiet, args.list_report,
-        args.map_proguard, args.size_stats, args.debug, args.class_only)
+              args.map_proguard, args.size_stats, args.debug, args.class_only)
 
     dex.analyze()
 
