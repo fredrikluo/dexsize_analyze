@@ -12,7 +12,6 @@ import lib.proguard_demngl as proguard_demngl
 
 
 class DexTreeItem(object):
-
     def __init__(self, obj, size, parent=None, idx=0):
         self.obj = obj
         self.size = size
@@ -25,7 +24,6 @@ class DexTreeItem(object):
 
 
 class MapListItemAccessor(object):
-
     def __init__(self, obj):
         self.obj = obj
 
@@ -44,7 +42,6 @@ class MapListItemAccessor(object):
 
 
 class Dex(object):
-
     def __init__(self, filename, sort_by_self=False, quiet=False,
                  list_report=False, proguard_mapfile=None,
                  size_stats=False, debug=False, class_only=False):
@@ -76,28 +73,23 @@ class Dex(object):
         self._dex = dvm.DalvikVMFormat(open(self.filename).read(), 'rb')
 
         # All the items in the Dex file
-
         for k in dvm.TYPE_MAP_ITEM.keys():
             name = dvm.TYPE_MAP_ITEM[k]
             setattr(self, name, ({} if k >= 0x1000 else []))
 
         # Build the map items
-
         self._proginfo('Building map from dexfile...')
         self._build_map()
 
         # Build the reference tree
-
         self._proginfo('Solving all the references...')
         self._build_reference_tree()
 
         # Build the reference count
-
         self._proginfo('Calculating reference counters...')
         self._build_refcount()
 
         # Output statistics
-
         self._proginfo('Generating statistics...')
 
         if sys.stdout.isatty():
@@ -190,46 +182,37 @@ class Dex(object):
                 )
 
     def _build_reference_tree(self):
-
         # header has no reference items
         # maplists = dvm.TYPE_MAP_ITEM[0x1000]
         # ingore the map list for now
-
         maplists = getattr(self, dvm.TYPE_MAP_ITEM[0x1000])
 
         # Node with no reference to others
-
         stringdatas = getattr(self, dvm.TYPE_MAP_ITEM[0x2002])
 
         # string_id
-
         stringids = getattr(self, dvm.TYPE_MAP_ITEM[1])
         for i in stringids:
             self._connect_ref(i, stringdatas, i.obj.string_data_off)
 
         # type_id
-
         typeids = getattr(self, dvm.TYPE_MAP_ITEM[2])
         for i in typeids:
             self._connect_ref(i, stringids, i.obj.descriptor_idx)
 
         # debuginfos
-
         debuginfos = getattr(self, dvm.TYPE_MAP_ITEM[0x2003])
         for k in debuginfos.keys():
             i = debuginfos[k]
 
             # parameter_names
-
             for pi in i.obj.get_parameter_names():
                 self._connect_ref(i, stringids, pi)
 
             # dissemble the debug code to find the string reference.
-
             for d in i.obj.get_bytecodes():
 
                 # find the string reference.
-
                 bcode_value = d.get_op_value()
                 if bcode_value == dvm.DBG_START_LOCAL:
                     name_idx = d.format[1][0]
@@ -254,7 +237,6 @@ class Dex(object):
                         self._connect_ref(i, stringids, str_idx)
 
         # field_id
-
         fieldids = getattr(self, dvm.TYPE_MAP_ITEM[4])
         for i in fieldids:
             self._connect_ref(i, typeids, i.obj.class_idx)
@@ -264,14 +246,12 @@ class Dex(object):
         typelists = getattr(self, dvm.TYPE_MAP_ITEM[0x1001])
 
         # add type_idx in type_item
-
         for k in typelists.keys():
             i = typelists[k]
             for idx in xrange(0, i.obj.size):
                 self._connect_ref(i, typeids, i.obj.list[idx].type_idx)
 
         # proto_id
-
         protoids = getattr(self, dvm.TYPE_MAP_ITEM[3])
         for i in protoids:
             self._connect_ref(i, stringids, i.obj.shorty_idx)
@@ -280,7 +260,6 @@ class Dex(object):
                 self._connect_ref(i, typelists, i.obj.parameters_off)
 
         # method_id
-
         methodids = getattr(self, dvm.TYPE_MAP_ITEM[5])
         for i in methodids:
             self._connect_ref(i, typeids, i.obj.class_idx)
@@ -291,7 +270,6 @@ class Dex(object):
 
         # -> encoded_annotation -> type_idx
         #    annotation_element -> name_idx
-
         for k in annitems.keys():
             i = annitems[k]
             self._connect_encoded_annotation(
@@ -307,7 +285,6 @@ class Dex(object):
 
         # link to annotation_item
         # annotation_off_item
-
         for k in annsetitems.keys():
             i = annsetitems[k]
             entries = i.obj.annotation_off_item
@@ -320,7 +297,6 @@ class Dex(object):
         # annotation_set_ref_list
         # link to annotation_item
         # annotation_off_item
-
         for k in ann_ref_sets.keys():
             i = ann_ref_sets[k]
             ls = i.obj.list
@@ -331,7 +307,6 @@ class Dex(object):
         encodearraryitems = getattr(self, dvm.TYPE_MAP_ITEM[0x2005])
 
         # encoded array items
-
         for k in encodearraryitems.keys():
             i = encodearraryitems[k]
             obj = i.obj
@@ -350,7 +325,6 @@ class Dex(object):
         # encoded_catch_handler_list->encoded_catch_handler
         #                             ->encoded_type_addr_pair
         #                               ->type_idx
-
         for k in codeitems.keys():
             i = codeitems[k]
             if int(i.obj.debug_info_off) > 0:
@@ -400,7 +374,6 @@ class Dex(object):
         # encoded_field->field_idx_diff
         # encoded_method->method_idx_diff
         #               ->code_off
-
         for k in classdatas.keys():
             i = classdatas[k]
 
@@ -435,7 +408,6 @@ class Dex(object):
         #                   -> annotations_off (annotation_set_item)
         # parameter_annotations -> method_idx(method_ids)
         #                   -> annotations_off (annotation_set_item)
-
         for k in anndicitems.keys():
             i = anndicitems[k]
             if i.obj.class_annotations_off:
@@ -463,7 +435,6 @@ class Dex(object):
                             'method_idx', True)
 
         # classdefs
-
         classdefs = getattr(self, dvm.TYPE_MAP_ITEM[6])
         for i in classdefs:
             self._connect_ref(i, typeids, i.obj.class_idx)
@@ -485,39 +456,31 @@ class Dex(object):
                 self._connect_ref(i, encodearraryitems,
                                   i.obj.static_values_off)
 
-    def _walk(self, i, op, indent, op_obj, parent=None, ret=0):
+    def _walk(self, i, op, indent, op_obj):
         indent += 1
-        ret_1 = op(i, indent, op_obj, parent, ret)
+        op(i, indent, op_obj)
         for x in i.child:
-            self._walk(x, op, indent, op_obj, i, ret_1)
+            self._walk(x, op, indent, op_obj)
 
         indent -= 1
 
     def _build_refcount(self):
-
         # The start point is always classdefs
-
         classdefs = getattr(self, dvm.TYPE_MAP_ITEM[6])
 
-        def op(obj, i, o_o, p, ret):
+        def op(obj, i, op_obj):
             obj.ref_count += 1
-            obj.class_node = o_o
-            global ins_count
-            return ret
+            obj.class_node = op_obj
 
         for i in classdefs:
-            self._walk(i, op, 0, i, 0)
-
-        return 0
+            self._walk(i, op, 0, i)
 
     def _output_statistics(self):
-
         def sum_up(item):
             result = [0]
 
-            def op_s(obj, i, ref, p, r):
-                ref[0] += obj.size / float(max(obj.ref_count, 1))
-                return r
+            def op_s(obj, i, op_obj):
+                op_obj[0] += obj.size / float(max(obj.ref_count, 1))
 
             self._walk(item, op_s, 0, result)
             item.cum = result[0]
@@ -660,9 +623,7 @@ class Dex(object):
                                  int(i[2]), (i[4])[:95], i[3])
 
     def _unreferenced_check(self):
-
         # Inspect unreferenced the item list
-
         print 'Unreferenced Object:'
 
         for k in dvm.TYPE_MAP_ITEM.keys():
@@ -692,7 +653,6 @@ class Dex(object):
                         i.obj.show()
 
     def _size_stats(self):
-
         # Inspect the item list
         print "----------------------"
         print "Size stats (in bytes):\n"
@@ -722,33 +682,40 @@ class Dex(object):
         print "Total size:", a_s
         print "File size:", self.filesize
 
-parser = argparse.ArgumentParser()
-parser.add_argument('dexfile', help='dex file to analyze.')
-parser.add_argument('-m', '--map-proguard',
-                    help='map file to translate the symbol.',
-                    type=str)
-parser.add_argument('-st', '--size_stats',
-                    help='statistics about all the items.',
-                    action='store_true')
-parser.add_argument('-d', '--debug',
-                    help='debug information.',
-                    action='store_true')
-parser.add_argument('-l', '--list-report',
-                    help='output a list report in csv format.',
-                    action='store_true')
-parser.add_argument('-s', '--sort-by-self',
-                    help='sort the result by self size.',
-                    action='store_true')
-parser.add_argument('-q', '--quiet',
-                    help='quiet mode, run without progress\
-                          information.',
-                    action='store_true')
-parser.add_argument('-c', '--class-only',
-                    help='only display sizes of the classes\
-                          in the dex file.',
-                    action='store_true')
-args = parser.parse_args()
+def dex_analyze():
+    # Start of the main function.
+    parser = argparse.ArgumentParser()
+    parser.add_argument('dexfile', help='dex file to analyze.')
+    parser.add_argument('-m', '--map-proguard',
+        help='map file to translate the symbol.',
+        type=str)
+    parser.add_argument('-st', '--size_stats',
+        help='statistics about all the items.',
+        action='store_true')
+    parser.add_argument('-d', '--debug',
+        help='debug information.',
+        action='store_true')
+    parser.add_argument('-l', '--list-report',
+        help='output a list report in csv format.',
+        action='store_true')
+    parser.add_argument('-s', '--sort-by-self',
+        help='sort the result by self size.',
+        action='store_true')
+    parser.add_argument('-q', '--quiet',
+        help='quiet mode, run without progress\
+                information.',
+                action='store_true')
+    parser.add_argument('-c', '--class-only',
+        help='only display sizes of the classes\
+                in the dex file.',
+                action='store_true')
 
-dex = Dex(args.dexfile, args.sort_by_self, args.quiet, args.list_report,
-          args.map_proguard, args.size_stats, args.debug, args.class_only)
-dex.analyze()
+    args = parser.parse_args()
+
+    dex = Dex(args.dexfile, args.sort_by_self, args.quiet, args.list_report,
+        args.map_proguard, args.size_stats, args.debug, args.class_only)
+
+    dex.analyze()
+
+if __name__ == '__main__':
+    dex_analyze()
