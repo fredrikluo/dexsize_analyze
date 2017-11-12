@@ -43,6 +43,16 @@ The solution is here:
 
 	sudo ln -s /usr/bin/python2.7 /usr/bin/python2
 
+If you are using Mac OS X El Capitan or later, its new System Integrity Protection feature prevents changes to several core parts of OS X, including most of /usr, even by root.
+
+So the solution should be like this instead:
+
+	sudo mkdir -p /usr/local/bin
+	sudo ln -s /usr/bin/python2.7 /usr/local/bin/python2
+	
+See more details:
+[https://stackoverflow.com/questions/36730549/cannot-create-a-symlink-inside-of-usr-bin-even-as-sudo]()
+
 Usage:
 ------
 It's recommended to use pypy http://pypy.org/ to get better performance.  The script needs to build up the reference grahics of all the items in the dex file, hence takes some time (30s+ sometimes). Python implementation with JIT, such like pyp, will significantly improve the speed.
