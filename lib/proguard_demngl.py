@@ -19,7 +19,7 @@ class ProgardDemangle(object):
         type_list = {}
 
         for l in fl:
-            if not l.startswith(' '):
+            if l and not l.startswith(' ') and not l.startswith('#'):
                 (org_name, mangled_name) = self._getMapping(l)
                 type_list[mangled_name] = org_name
                 self.type_rlist[org_name] = mangled_name
@@ -28,6 +28,9 @@ class ProgardDemangle(object):
 
         class_name = None
         for l in fl:
+            if not l or l.strip().startswith('#'):
+                continue
+
             (org_name, mangled_name) = self._getMapping(l)
             if not l.startswith(' '):
                 class_name = mangled_name
@@ -58,7 +61,13 @@ class ProgardDemangle(object):
             return mangled_name
 
     def _getMapping(self, l):
-        (org_name, mangled_name) = l.strip().split('->')
+        try:
+            (org_name, mangled_name) = l.strip().split('->')
+        except:
+            print(l)
+            print("testing")
+            sys.stdout.flush()
+            raise
         o_l = org_name.split(':')
 
         if len(o_l) == 3:
