@@ -61,13 +61,7 @@ class ProgardDemangle(object):
             return mangled_name
 
     def _getMapping(self, l):
-        try:
-            (org_name, mangled_name) = l.strip().split('->')
-        except:
-            print(l)
-            print("testing")
-            sys.stdout.flush()
-            raise
+        (org_name, mangled_name) = l.strip().split('->')
         o_l = org_name.split(':')
 
         if len(o_l) == 3:
